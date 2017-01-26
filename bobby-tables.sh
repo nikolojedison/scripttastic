@@ -17,3 +17,4 @@ $ipt -t mangle -F
 $ipt -t mangle -X
 $ipt -t raw -F 
 $ipt -t raw -X
+echo "Firewall open! Watch your back!"
