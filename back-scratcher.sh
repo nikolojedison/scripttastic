@@ -5,4 +5,4 @@
 DATA="/home /root /etc"
  
 #choose where you want to pipe the backup to below#
-tar cfzp "/home/back_scratcher.tgz" $DATA --same-owner
+tar cfzp "/scratcher.tgz" $DATA --same-owner
