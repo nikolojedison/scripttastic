@@ -2,7 +2,7 @@
 #a simple backup script for ccdc#
 #add directories as required to DATA with the format /[path]/[to]/[dir]/#
  
-DATA="/home /root /etc"
+DATA="/home /root /etc /var"
  
 #choose where you want to pipe the backup to below#
 tar cfzp "/scratcher.tgz" $DATA --same-owner

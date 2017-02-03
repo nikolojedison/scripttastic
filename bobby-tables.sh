@@ -17,7 +17,8 @@ $ipt -t mangle -F
 $ipt -t mangle -X
 $ipt -t raw -F 
 $ipt -t raw -X
-echo "Firewall reset, adding rules..."
+echo "Firewall reset, adding Debian rules..."
+## edit as required for shenanigans, CentOS and Ubuntu will likely need different rules.
 $ipt -P INPUT DROP
 $ipt -P FORWARD DROP
 $ipt -P OUTPUT ACCEPT
