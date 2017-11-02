@@ -3,6 +3,10 @@
 ## stolen from nixcraft
 
 
+echo -n "
+Enter 0 for Pi, 1 for Ubuntu, 2 for Debian, and 3 for CentOS: "
+read answer1
+
 echo "Stopping firewall and allowing everyone..."
 ipt="/sbin/iptables"
 ## Failsafe - die if /sbin/iptables not found 
@@ -19,11 +23,6 @@ $ipt -t mangle -X
 $ipt -t raw -F 
 $ipt -t raw -X
 
-## edit as required for shenanigans, CentOS and Ubuntu will likely need different rules.
-
-echo -n "
-Enter 0 for Pi, 1 for Ubuntu, 2 for Debian, and 3 for CentOS: "
-read answer1
 
 if [ $answer1 = "0" ]; then
 
