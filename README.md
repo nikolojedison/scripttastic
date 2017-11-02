@@ -1,2 +1,3 @@
 # scripttastic
-Scripts 'n stuff.
+
+Scripts for hardening.
