@@ -21,6 +21,12 @@ $ipt -t raw -X
 
 ## edit as required for shenanigans, CentOS and Ubuntu will likely need different rules.
 
+echo -n "
+Enter 0 for Pi, 1 for Ubuntu, 2 for Debian, and 3 for CentOS: "
+read answer1
+
+if [ $answer1 = "0" ]; then
+
 ## PI
 echo "Firewall reset, adding Pi rules..."
 $ipt -P INPUT DROP
@@ -65,6 +71,8 @@ $ipt -A INPUT -s xxx.xxx.xxx.xxx/24 -p udp -m udp --dport 514 -j ACCEPT
 $ipt -A INPUT -j DROP
 $ipt -A OUTPUT -j ACCEPT
 
+elif [ $answer1 = "2" ]; then
+
 ## DEBIAN
 echo "Firewall reset, adding Debian rules..."
 $ipt -P INPUT DROP
@@ -90,3 +98,8 @@ $ipt -A INPUT -p tcp --dport 993 -j ACCEPT
 $ipt -A INPUT -p tcp --dport 995 -j ACCEPT
 $ipt -A INPUT -p tcp --dport 1433 -j ACCEPT
 $ipt -A INPUT -p tcp --dport 1434 -j ACCEPT
+
+else
+	echo "Error. Please run again."
+	exit 1
+fi
