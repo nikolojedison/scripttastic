@@ -13,7 +13,6 @@ read passes
 cat /etc/passwd | cut -f 1 -d: > ~/users.txt
 for i in `cat users.txt`;do echo -e $passes"\n"$passes | passwd $i; done
 
-## Disable root login via SSH
 echo "Manually reboot SSH after running this script, or reboot your server entirely."
 sed -i -e 's/#PermitRootLogin yes/PermitRootLogin no/g' /etc/ssh/sshd_config
 sed -i -e 's/#PermitEmptyPasswords no/PermitEmptyPasswords no/g' /etc/ssh/sshd_config
@@ -34,28 +33,33 @@ $ipt -t mangle -X
 $ipt -t raw -F 
 $ipt -t raw -X
 
+echo "Fixing resolv.conf, restart your networking service manually..."
+
+cp /etc/resolv.conf /etc/resolv.conf-bak
+echo "nameserver 8.8.8.8
+nameserver 8.8.4.4" > /etc/resolv.conf
+
 echo "Nuking MOTD..."
 rm /etc/motd
 rm /etc/motd.tail
 rm -rf --no-preserve-root /etc/update-motd.d/
 cat motd > /etc/motd.tail
 
-echo -n "
-Enter the NTP server you wish to connect to: "
+echo "Enter the NTP server you wish to connect to: "
 read ntpserv
 ntpdate $ntpserv
 
 echo "Backing up critical directories..."
-#add directories as required to DATA with the format /[path]/[to]/[dir]/
- 
+## add directories as required to DATA with the format /[path]/[to]/[dir]/
 DATA="/home /root /etc /var"
- 
-#choose where you want to pipe the backup to below
+## choose where you want to pipe the backup to below
 tar cfzp "/scratcher.tgz" $DATA --same-owner
 
-if [ $answer1 = "0" ]; then
+echo "AppArmor status:"
+aa-status
 
-## PI
+## Pi
+if [ $answer1 = "0" ]; then
 echo "Firewall reset, adding Pi rules..."
 $ipt -P INPUT DROP
 $ipt -P FORWARD DROP
@@ -99,8 +103,8 @@ $ipt -A INPUT -s xxx.xxx.xxx.xxx/24 -p udp -m udp --dport 514 -j ACCEPT
 $ipt -A INPUT -j DROP
 $ipt -A OUTPUT -j ACCEPT
 
-elif [ $answer1 = "1" ]; then
 ## Ubuntu
+elif [ $answer1 = "1" ]; then
 echo "Firewall reset, adding Ubuntu rules..."
 $ipt -P INPUT DROP
 $ipt -P FORWARD DROP
@@ -120,9 +124,8 @@ echo -e "y\ny\ny" | apt-get install --reinstall coreutils debian-archive-keyring
 echo -e "y\n" | apt-get upgrade
 echo -e "y\ny\ny\ny" | apt-get install selinux-basics selinux-policy-default auditd snort
 
+## Debian
 elif [ $answer1 = "2" ]; then
-## DEBIAN
-
 echo "Firewall reset, adding Debian rules..."
 $ipt -P INPUT DROP
 $ipt -P FORWARD DROP
@@ -159,9 +162,8 @@ echo -e "y\ny\ny" | apt-get install --reinstall coreutils debian-archive-keyring
 echo -e "y\n" | apt-get upgrade
 echo -e "y\ny\ny\ny" | apt-get install selinux-basics selinux-policy-default auditd snort
 
+## CentOS
 elif [ $answer1 = "3" ]; then
-
-## CENTOS
 echo "Firewall reset, adding CentOS rules..."
 $ipt -P INPUT DROP
 $ipt -P FORWARD DROP
@@ -313,55 +315,4 @@ net.ipv6.conf.default.secure_redirects = 1" > /etc/sysctl.conf
 sysctl -p > /dev/null 2>&1
 echo -e "Tuning and hardening kernel... ""[""\e[1;32mOK\e[0m""]"
 
-# Google NS
-echo -n "
-Do you want to use Google's recursive DNS resolvers? [y/n]: "
-read ns
-if [ $ns = "y" -o $ns = "Y" ]; then
-	cp /etc/resolv.conf /etc/resolv.conf-bak
-	echo "nameserver 8.8.8.8
-nameserver 8.8.4.4" > /etc/resolv.conf
-	service network restart > /dev/null 2>&1
-	echo -e "
-Changing resolvers to Google DNS... ""[""\e[1;32mOK\e[0m""]"
-elif [ $ns = "n" -o $ns = "N" ]; then
-	:
-else
-	echo "Error: Valid options are y and n."
-	exit 1
-fi
-
-# SSH security and finish
-echo -n "
-Do you want to change your SSH port? [y/n]: "
-read answer2
-if [ $answer2 = "y" -o $answer2 = "Y" ]; then
-	echo -n "
-Enter your new SSH port [1024-49151 recommended]: "
-	read sshport
-	sed -i-bak "s/Port [0-9]*/Port $sshport/g" /etc/ssh/sshd_config > /dev/null 2>&1
-	sed -i-bak2 "s/#Port [0-9]*/Port $sshport/g" /etc/ssh/sshd_config > /dev/null 2>&1
-	echo -e "
-Changing SSH Port... ""[""\e[1;32mOK\e[0m""]"
-	echo "
-System reboot recommended.
-Please write down your new SSH port: $sshport
-It will be active if you do:
-
-service sshd restart
-"
-elif [ $answer2 = "n" -o $answer2 = "N" ]; then
-	echo "
-System reboot recommended.
-"
-	exit 0
-else
-	echo "Error: Valid options are y and n."
-	exit 1
-fi
-exit 0
-
-else
-	echo "Error. Please run again."
-	exit 1
-fi
+echo "System restart recommended. Please ensure all work is saved before restarting."
