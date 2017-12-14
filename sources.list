@@ -1,0 +1,4 @@
+deb http://archive.debian.org/debian/ lenny main non-free contrib
+deb-src http://archive.debian.org/debian/ lenny main non-free contrib
+deb http://archive.debian.org/debian-security/ lenny/updates main non-free contrib
+deb-src http://archive.debian.org/debian-security/ lenny/updates main non-free contrib

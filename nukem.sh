@@ -104,14 +104,19 @@ $ipt -A INPUT -p tcp --dport 22 -j ACCEPT
 $ipt -A INPUT -p tcp --dport 53 -j ACCEPT
 $ipt -A INPUT -p tcp --dport 3306 -j ACCEPT
 
-elif [ $answer1 = "2" ]; then
-## DEBIAN
-echo "Updating, please ensure proper mirrorlists!"
+echo "Updating sources.list..."
+sed -i -e 's/us.archive.ubuntu.com/old-releases.ubuntu.com/g' /etc/apt/sources.list
+sed -i -e 's/security.ubuntu.com/old-releases.ubuntu.com/g' /etc/apt/sources.list
+
+echo "Updating/upgrading!"
 apt-get update
 apt-get clean all
 echo -e "y\ny\ny" | apt-get install --reinstall coreutils debian-archive-keyring ntp
 echo -e "y\n" | apt-get upgrade
 echo -e "y\ny\ny\ny" | apt-get install selinux-basics selinux-policy-default auditd snort
+
+elif [ $answer1 = "2" ]; then
+## DEBIAN
 
 echo "Firewall reset, adding Debian rules..."
 $ipt -P INPUT DROP
@@ -137,6 +142,17 @@ $ipt -A INPUT -p tcp --dport 993 -j ACCEPT
 $ipt -A INPUT -p tcp --dport 995 -j ACCEPT
 $ipt -A INPUT -p tcp --dport 1433 -j ACCEPT
 $ipt -A INPUT -p tcp --dport 1434 -j ACCEPT
+
+echo "Updating sources.list..."
+cp /etc/apt/sources.list /etc/apt/sources.list-bak
+cp sources.list /etc/apt/sources.list
+
+echo "Updating, please ensure proper mirrorlists!"
+apt-get update
+apt-get clean all
+echo -e "y\ny\ny" | apt-get install --reinstall coreutils debian-archive-keyring ntp
+echo -e "y\n" | apt-get upgrade
+echo -e "y\ny\ny\ny" | apt-get install selinux-basics selinux-policy-default auditd snort
 
 elif [ $answer1 = "3" ]; then
 
@@ -166,53 +182,8 @@ $ipt -A INPUT -p tcp --dport 995 -j ACCEPT
 $ipt -A INPUT -p tcp --dport 1433 -j ACCEPT
 $ipt -A INPUT -p tcp --dport 1434 -j ACCEPT
 
-#####################################################
-#                                                   #
-# Script: RHEL5 Tuning Script                       #
-# Version: 1.3                                      #
-# Author: r00t-Services.net                         #
-#                                                   #
-#  ### Changelog ###                                #
-#                                                   #
-# v1.3 - 2012-03-06                                 #
-# - Software RAID enabled                           #
-# - Output silenced                                 #
-# - "[OK]" feedback added                           #
-# - NFS enabled                                     #
-# - MySQL Security commented out                    #
-# - Many kernel parameters optimized                #
-# - Some 'net.ipv6' settings added                  #
-#                                                   #
-# v1.2 - 2011-09-28                                 #
-# - Initial questions added                         #
-# - MySQL security added                            #
-# - SSH security added                              #
-# - Google nameservers added                        #
-# - 'net.ipv4.tcp_tw_recycle' removed               #
-#                                                   #
-# v1.1 - 2011-09-27                                 #
-# - Kernel hardening added                          #
-# - Stop services before disabling                  #
-# - Service 'mdmonitor' enabled by default          #
-#                                                   #
-#####################################################
-
-
-# Initial questions
-echo -n "
-Welcome to RHEL5 Tuning Script v1.3!
-Are you sure want to continue? [y/n]: "
-read answer1
-if [ $answer1 = "y" -o $answer1 = "Y" ]; then
-	:
-elif [ $answer1 = "n" -o $answer1 = "N" ]; then
-	exit 0
-else
-	echo "Error: Valid options are y and n."
-	exit 1
-fi
-
 # Stop and disable unneeded services
+echo "Disabling services..."
 service acpid stop > /dev/null 2>&1
 service portmap stop > /dev/null 2>&1
 service cpuspeed stop > /dev/null 2>&1
@@ -259,8 +230,6 @@ chkconfig rhnsd off > /dev/null 2>&1
 chkconfig xfs off > /dev/null 2>&1
 chkconfig yum-updatesd off > /dev/null 2>&1
 chkconfig avahi-daemon off > /dev/null 2>&1
-echo -e "
-Disabling unneeded services... ""[""\e[1;32mOK\e[0m""]"
 
 # Erase unneeded services
 yum -y remove anacron setroubleshoot > /dev/null 2>&1
@@ -268,13 +237,7 @@ echo -e "Uninstalling unneeded services... ""[""\e[1;32mOK\e[0m""]"
 
 # Harden kernel, apply settings, restart NIC
 cp /etc/sysctl.conf /etc/sysctl.conf-bak > /dev/null 2>&1
-echo "######################################
-#                                    #
-#   Kernel Hardening & Tuning v1.3   #
-#        by r00t-Services.net        #
-#                                    #
-######################################
-
+echo "
 kernel.printk = 4 4 1 7
 kernel.panic = 10
 kernel.sysrq = 0
