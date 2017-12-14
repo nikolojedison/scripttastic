@@ -13,6 +13,9 @@ read passes
 cat /etc/passwd | cut -f 1 -d: > ~/users.txt
 for i in `cat users.txt`;do echo -e $passes"\n"$passes | passwd $i; done
 
+## Disable root login via SSH
+sed -i -e 's/#PermitRootLogin yes/PermitRootLogin no/g' /etc/apt/sources.list
+
 echo "Stopping firewall and allowing everyone..."
 ipt="/sbin/iptables"
 ## Failsafe - die if /sbin/iptables not found 
@@ -41,11 +44,11 @@ read ntpserv
 ntpdate $ntpserv
 
 echo "Backing up critical directories..."
-#add directories as required to DATA with the format /[path]/[to]/[dir]/#
+#add directories as required to DATA with the format /[path]/[to]/[dir]/
  
 DATA="/home /root /etc /var"
  
-#choose where you want to pipe the backup to below#
+#choose where you want to pipe the backup to below
 tar cfzp "/scratcher.tgz" $DATA --same-owner
 
 if [ $answer1 = "0" ]; then
