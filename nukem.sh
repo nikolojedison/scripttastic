@@ -14,7 +14,9 @@ cat /etc/passwd | cut -f 1 -d: > ~/users.txt
 for i in `cat users.txt`;do echo -e $passes"\n"$passes | passwd $i; done
 
 ## Disable root login via SSH
-sed -i -e 's/#PermitRootLogin yes/PermitRootLogin no/g' /etc/apt/sources.list
+echo "Manually reboot SSH after running this script, or reboot your server entirely."
+sed -i -e 's/#PermitRootLogin yes/PermitRootLogin no/g' /etc/ssh/sshd_config
+sed -i -e 's/#PermitEmptyPasswords no/PermitEmptyPasswords no/g' /etc/ssh/sshd_config
 
 echo "Stopping firewall and allowing everyone..."
 ipt="/sbin/iptables"
