@@ -189,6 +189,12 @@ $ipt -A INPUT -p tcp --dport 995 -j ACCEPT
 $ipt -A INPUT -p tcp --dport 1433 -j ACCEPT
 $ipt -A INPUT -p tcp --dport 1434 -j ACCEPT
 
+echo "Fixing repos..."
+cp /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.bak
+cp base.repo /etc/yum.repos.d/CentOS-Base.repo
+cp rsyslog.repo /etc/yum.repos.d/rsyslog.repo
+yum update
+
 # Stop and disable unneeded services
 echo "Disabling services..."
 service acpid stop > /dev/null 2>&1
