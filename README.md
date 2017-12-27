@@ -2,6 +2,11 @@
 
 Scripts for hardening.
 
+Use
+--
+* `git clone https://github.com/nikolojedison/scripttastic.git` OR `wget [wherever the .zip is]`
+* `sudo bash ./nukem.sh`
+
 Features
 --
 * Auto firewall through iptables

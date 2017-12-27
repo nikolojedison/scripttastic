@@ -134,7 +134,7 @@ echo -e "y\ny\ny" | apt-get install --reinstall coreutils debian-archive-keyring
 echo -e "y\n" | apt-get upgrade
 echo -e "y\ny\ny\ny" | apt-get install selinux-basics selinux-policy-default auditd rsyslog
 
-cp rsyslog.conf /etc/rsyslog.conf
+cp deb-rsyslog.conf /etc/rsyslog.conf
 
 ## Debian
 elif [ $answer1 = "2" ]; then
@@ -174,7 +174,7 @@ echo -e "y\ny\ny" | apt-get install --reinstall coreutils debian-archive-keyring
 echo -e "y\n" | apt-get upgrade
 echo -e "y\ny\ny\ny" | apt-get install selinux-basics selinux-policy-default auditd rsyslog
 
-cp rsyslog.conf /etc/rsyslog.conf
+cp deb-rsyslog.conf /etc/rsyslog.conf
 
 ## CentOS
 elif [ $answer1 = "3" ]; then
@@ -334,6 +334,6 @@ net.ipv6.conf.all.secure_redirects = 1
 net.ipv6.conf.default.secure_redirects = 1" > /etc/sysctl.conf
 sysctl -p > /dev/null 2>&1
 echo -e "Tuning and hardening kernel... ""[""\e[1;32mOK\e[0m""]"
-cp rsyslog.conf /etc/rsyslog.conf
+cp cent-rsyslog.conf /etc/rsyslog.conf
 
 echo "System restart recommended. Please ensure all work is saved before restarting."
