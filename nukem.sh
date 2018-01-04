@@ -14,10 +14,10 @@ cat /etc/passwd | cut -f 1 -d: > ~/users.txt
 for i in `cat users.txt`;do echo -e $passes"\n"$passes | passwd $i; done
 
 echo "Manually reboot SSH after running this script, or reboot your server entirely."
-sed -i -e 's/#PermitRootLogin yes/PermitRootLogin no/g' /etc/ssh/sshd_config
-sed -i -e 's/#PermitEmptyPasswords no/PermitEmptyPasswords no/g' /etc/ssh/sshd_config
+sed -i -e 's/PermitRootLogin yes/PermitRootLogin no/g' /etc/ssh/sshd_config
+sed -i -e 's/PermitEmptyPasswords no/PermitEmptyPasswords no/g' /etc/ssh/sshd_config
+sed -i -e 's/X11Forwarding yes/X11Forwarding no/g' /etc/ssh/sshd_config
 
-echo "Stopping firewall and allowing everyone..."
 ipt="/sbin/iptables"
 ## Failsafe - die if /sbin/iptables not found 
 [ ! -x "$ipt" ] && { echo "$0: \"${ipt}\" command not found."; exit 1; }
@@ -132,7 +132,7 @@ apt-get update
 apt-get clean all
 echo -e "y\ny\ny" | apt-get install --reinstall coreutils debian-archive-keyring
 echo -e "y\n" | apt-get upgrade
-echo -e "y\ny\ny\ny" | apt-get install selinux-basics selinux-policy-default auditd rsyslog
+echo -e "y\ny\ny\ny" | apt-get install selinux-basics selinux-policy-default auditd rsyslog rkhunter chkrootkit
 
 cp deb-rsyslog.conf /etc/rsyslog.conf
 
@@ -172,7 +172,7 @@ apt-get update
 apt-get clean all
 echo -e "y\ny\ny" | apt-get install --reinstall coreutils debian-archive-keyring
 echo -e "y\n" | apt-get upgrade
-echo -e "y\ny\ny\ny" | apt-get install selinux-basics selinux-policy-default auditd rsyslog
+echo -e "y\ny\ny\ny" | apt-get install selinux-basics selinux-policy-default auditd rsyslog rkhunter chkrootkit
 
 cp deb-rsyslog.conf /etc/rsyslog.conf
 
