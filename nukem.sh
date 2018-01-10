@@ -33,31 +33,6 @@ $ipt -t mangle -X
 $ipt -t raw -F 
 $ipt -t raw -X
 
-echo "Fixing resolv.conf, restart your networking service manually..."
-
-cp /etc/resolv.conf /etc/resolv.conf-bak
-echo "nameserver 8.8.8.8
-nameserver 8.8.4.4" > /etc/resolv.conf
-
-echo "Nuking MOTD..."
-rm /etc/motd
-rm /etc/motd.tail
-rm -rf --no-preserve-root /etc/update-motd.d/
-cat motd > /etc/motd.tail
-
-echo "Enter the NTP server you wish to connect to: "
-read ntpserv
-ntpdate $ntpserv
-
-echo "Backing up critical directories..."
-## add directories as required to DATA with the format /[path]/[to]/[dir]/
-DATA="/home /root /etc /var"
-## choose where you want to pipe the backup to below
-tar cfzp "/scratcher.tgz" $DATA --same-owner
-
-echo "AppArmor status:"
-aa-status
-
 ## Pi
 if [ $answer1 = "0" ]; then
 echo "Firewall reset, adding Pi rules..."
@@ -111,6 +86,7 @@ echo -e "y\n" | apt-get upgrade
 echo -e "y\ny\ny\ny" | apt-get install selinux-basics selinux-policy-default auditd rsyslog
 
 cp rsyslog.conf /etc/rsyslog.conf
+fi
 
 ## Ubuntu
 elif [ $answer1 = "1" ]; then
@@ -134,7 +110,30 @@ echo -e "y\ny\ny" | apt-get install --reinstall coreutils debian-archive-keyring
 echo -e "y\n" | apt-get upgrade
 echo -e "y\ny\ny\ny" | apt-get install selinux-basics selinux-policy-default auditd rsyslog rkhunter chkrootkit
 
+echo "D I S A B L E"
+chmod 750 /usr/bin/python
+chmod 750 /usr/bin/perl
+chmod 750 /usr/bin/ruby
+chmod 751 /var/log/
+chmod 650 /var/log/lastlog
+chmod 650 /var/log/faillog
+chmod 750 /bin/dmesg
+chmod 650 /var/log/btmp
+chmod 750 /bin/uname
+chmod 750 /usr/bin/lsb_release
+chmod 750 /etc/issue
+chmod 750 /etc/issue.net
+chmod 750 /etc/debian_version
+chmod 750 /usr/bin/gcc
+chmod -R 750 /home/*
+sed -i "s/DIR_MODE=0755/DIR_MODE=0751/g" /etc/adduser.conf 
+
+echo "Disabling syn floods..."
+sysctl -w net.ipv4.tcp_syncookies=1 > /dev/null
+echo "net.ipv4.tcp_syncookies=1" >> /etc/sysctl.conf
+
 cp deb-rsyslog.conf /etc/rsyslog.conf
+fi
 
 ## Debian
 elif [ $answer1 = "2" ]; then
@@ -175,6 +174,7 @@ echo -e "y\n" | apt-get upgrade
 echo -e "y\ny\ny\ny" | apt-get install selinux-basics selinux-policy-default auditd rsyslog rkhunter chkrootkit
 
 cp deb-rsyslog.conf /etc/rsyslog.conf
+fi
 
 ## CentOS
 elif [ $answer1 = "3" ]; then
@@ -334,6 +334,64 @@ net.ipv6.conf.all.secure_redirects = 1
 net.ipv6.conf.default.secure_redirects = 1" > /etc/sysctl.conf
 sysctl -p > /dev/null 2>&1
 echo -e "Tuning and hardening kernel... ""[""\e[1;32mOK\e[0m""]"
+
+perl -npe 's/ca::ctrlaltdel:\/sbin\/shutdown/#ca::ctrlaltdel:\/sbin\/shutdown/' -i /etc/inittab
+
+echo "Disabling USB Mass Storage"
+echo "blacklist usb-storage" > /etc/modprobe.d/blacklist-usbstorage
+
+echo "tty1" > /etc/securetty
+chmod 700 /root
+
+perl -npe 's/PASS_MIN_DAYS\s+0/PASS_MIN_DAYS 1/g' -i /etc/login.defs
+
+perl -npe 's/umask\s+0\d2/umask 077/g' -i /etc/bashrc
+perl -npe 's/umask\s+0\d2/umask 077/g' -i /etc/csh.cshrc
+
+echo "readonly TMOUT=300" >> /etc/profile.d/os-security.sh
+echo "readonly HISTFILE" >> /etc/profile.d/os-security.sh
+chmod +x /etc/profile.d/os-security.sh
+
+touch /etc/cron.allow
+chmod 600 /etc/cron.allow
+awk -F: '{print $1}' /etc/passwd | grep -v root > /etc/cron.deny
+touch /etc/at.allow
+chmod 600 /etc/at.allow
+awk -F: '{print $1}' /etc/passwd | grep -v root > /etc/at.deny
+
 cp cent-rsyslog.conf /etc/rsyslog.conf
+fi
+
+echo "Fixing resolv.conf, restart your networking service manually..."
+
+cp /etc/resolv.conf /etc/resolv.conf-bak
+echo "nameserver 8.8.8.8
+nameserver 8.8.4.4" > /etc/resolv.conf
+
+echo "Nuking MOTD..."
+rm /etc/motd
+rm /etc/motd.tail
+rm -rf --no-preserve-root /etc/update-motd.d/
+cat motd > /etc/motd.tail
+
+echo "Enter the NTP server you wish to connect to: "
+read ntpserv
+ntpdate $ntpserv
+
+echo "Backing up critical directories..."
+## add directories as required to DATA with the format /[path]/[to]/[dir]/
+DATA="/home /root /etc /var"
+## choose where you want to pipe the backup to below
+tar cfzp "/scratcher.tgz" $DATA --same-owner
+
+echo "Managing file system"
+
+sudo find /home -iname "*.mp3" -delete
+sudo find /home -iname "*.jpg" -delete
+sudo find /home -iname "*.png" -delete
+sudo find /home -iname "*.mp4" -delete
+
+echo "AppArmor status:"
+aa-status
 
 echo "System restart recommended. Please ensure all work is saved before restarting."
