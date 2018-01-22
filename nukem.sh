@@ -390,6 +390,8 @@ echo "blacklist usb-storage" > /etc/modprobe.d/blacklist-usbstorage
 
 cp cent-rsyslog.conf /etc/rsyslog.conf
 
+echo "Install aide via yum, and follow the information at the DigitalOcean link - https://www.digitalocean.com/community/tutorials/how-to-install-aide-on-a-digitalocean-vps"
+
 fi
 
 echo "Fixing resolv.conf, restart your networking service manually..."
