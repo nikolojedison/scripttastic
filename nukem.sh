@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 echo -n "
 Enter 0 for Pi, 1 for Ubuntu, 2 for Debian, and 3 for CentOS: "
@@ -76,7 +76,6 @@ chmod 750 /etc/issue.net
 chmod 750 /etc/debian_version
 chmod 750 /usr/bin/gcc
 chmod -R 750 /home/*
-sed -i "s/DIR_MODE=0755/DIR_MODE=0751/g" /etc/adduser.conf 
 
 echo "Disabling syn floods..."
 sysctl -w net.ipv4.tcp_syncookies=1 > /dev/null
@@ -154,6 +153,7 @@ echo -e "y\n" | apt-get upgrade
 echo -e "y\ny\ny\ny" | apt-get install selinux-basics selinux-policy-default auditd rsyslog
 
 cp rsyslog.conf /etc/rsyslog.conf
+
 fi
 
 ## Ubuntu
@@ -170,6 +170,38 @@ echo "Updating sources.list..."
 cp /etc/apt/sources.list /etc/apt/sources.list.bak
 sed -i -e 's/us.archive.ubuntu.com/old-releases.ubuntu.com/g' /etc/apt/sources.list
 sed -i -e 's/security.ubuntu.com/old-releases.ubuntu.com/g' /etc/apt/sources.list
+
+sudo apt-get purge apache2
+passwd
+passwd -l daemon
+passwd -l bin
+passwd -l sys
+passwd -l sync
+passwd -l games
+passwd -l man
+passwd -l lp
+passwd -l mail
+passwd -l news
+passwd -l uucp
+passwd -l proxy
+passwd -l www-data
+passwd -l backup
+passwd -l list
+passwd -l irc
+passwd -l gnats
+passwd -l nobody
+passwd -l libuuid
+passwd -l dhcp
+passwd -l syslog
+passwd -l klog
+passwd -l bind
+passwd -l adam
+passwd -l statd
+passwd -l administrator
+passwd -l ntp
+passwd -l messagebus
+sudo apt-get update
+sudo apt-get autoremove
 
 echo "Updating/upgrading!"
 apt-get update
@@ -213,6 +245,30 @@ echo "Updating sources.list..."
 cp /etc/apt/sources.list /etc/apt/sources.list-bak
 cp sources.list /etc/apt/sources.list
 
+passwd
+passwd -l sync
+passwd -l games
+passwd -l lp
+passwd -l news
+passwd -l uucp
+passwd -l proxy
+passwd -l www-data
+passwd -l backup
+passwd -l list
+passwd -l irc
+passwd -l gnats
+passwd -l nobody
+passwd -l libuuid
+passwd -l Debian-exim
+passwd -l statd
+passwd -l messagebus
+passwd -l avahi
+passwd -l gdm
+passwd -l haldaemon
+passwd -l hplip
+passwd -l sshd
+passwd -l ntp
+
 echo "Updating, please ensure proper mirrorlists!"
 apt-get update
 apt-get clean all
@@ -227,29 +283,50 @@ fi
 ## CentOS
 elif [ $answer1 = "3" ]; then
 echo "Firewall reset, adding CentOS rules..."
-$ipt -P INPUT DROP
-$ipt -P FORWARD DROP
-$ipt -P OUTPUT ACCEPT
-$ipt -A INPUT -p tcp --dport 139 -j ACCEPT
-$ipt -A INPUT -p tcp --dport 57193 -j ACCEPT
-$ipt -A INPUT -p tcp --dport 57194 -j ACCEPT
-$ipt -A INPUT -p tcp --dport 389 -j ACCEPT
-$ipt -A INPUT -p tcp --dport 52949 -j ACCEPT
-$ipt -A INPUT -p tcp --dport 3306 -j ACCEPT
-$ipt -A INPUT -p tcp --dport 34891 -j ACCEPT
-$ipt -A INPUT -p tcp --dport 80 -j ACCEPT
-$ipt -A INPUT -p tcp --dport 445 -j ACCEPT
-$ipt -A INPUT -p tcp --dport 143 -j ACCEPT
-$ipt -A INPUT -p tcp --dport 25 -j ACCEPT
-$ipt -A INPUT -p tcp --dport 110 -j ACCEPT
-$ipt -A INPUT -p tcp --dport 123 -j ACCEPT
-$ipt -A INPUT -p tcp --dport 514 -j ACCEPT
-$ipt -A INPUT -p tcp --dport 587 -j ACCEPT
-$ipt -A INPUT -p tcp --dport 636 -j ACCEPT
-$ipt -A INPUT -p tcp --dport 993 -j ACCEPT
-$ipt -A INPUT -p tcp --dport 995 -j ACCEPT
-$ipt -A INPUT -p tcp --dport 1433 -j ACCEPT
-$ipt -A INPUT -p tcp --dport 1434 -j ACCEPT
+
+PUB_IF="eth0"
+SPAMLIST="blockedip"
+SPAMDROPMSG="BLOCKED IP DROP"
+
+$ipt -A INPUT -i ${PUB_IF} -p tcp ! --syn -m state --state NEW  -m limit --limit 5/m --limit-burst 7 -j LOG --log-level 4 --log-prefix "Drop Sync"
+$ipt -A INPUT -i ${PUB_IF} -p tcp ! --syn -m state --state NEW -j DROP
+$ipt -A INPUT -i ${PUB_IF} -f  -m limit --limit 5/m --limit-burst 7 -j LOG --log-level 4 --log-prefix "Fragments Packets"
+$ipt -A INPUT -i ${PUB_IF} -f -j DROP
+$ipt  -A INPUT -i ${PUB_IF} -p tcp --tcp-flags ALL FIN,URG,PSH -j DROP
+$ipt  -A INPUT -i ${PUB_IF} -p tcp --tcp-flags ALL ALL -j DROP
+$ipt  -A INPUT -i ${PUB_IF} -p tcp --tcp-flags ALL NONE -m limit --limit 5/m --limit-burst 7 -j LOG --log-level 4 --log-prefix "NULL Packets"
+$ipt  -A INPUT -i ${PUB_IF} -p tcp --tcp-flags ALL NONE -j DROP # NULL packets
+$ipt  -A INPUT -i ${PUB_IF} -p tcp --tcp-flags SYN,RST SYN,RST -j DROP
+$ipt  -A INPUT -i ${PUB_IF} -p tcp --tcp-flags SYN,FIN SYN,FIN -m limit --limit 5/m --limit-burst 7 -j LOG --log-level 4 --log-prefix "XMAS Packets"
+$ipt  -A INPUT -i ${PUB_IF} -p tcp --tcp-flags SYN,FIN SYN,FIN -j DROP #XMAS
+$ipt  -A INPUT -i ${PUB_IF} -p tcp --tcp-flags FIN,ACK FIN -m limit --limit 5/m --limit-burst 7 -j LOG --log-level 4 --log-prefix "Fin Packets Scan"
+$ipt  -A INPUT -i ${PUB_IF} -p tcp --tcp-flags FIN,ACK FIN -j DROP # FIN packet scans
+$ipt  -A INPUT -i ${PUB_IF} -p tcp --tcp-flags ALL SYN,RST,ACK,FIN,URG -j DROP
+$ipt -A INPUT -i eth0 -m state --state ESTABLISHED,RELATED -j ACCEPT
+$ipt -A OUTPUT -o eth0 -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
+$ipt -A INPUT -p icmp --icmp-type 8 -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
+$ipt -A OUTPUT -p icmp --icmp-type 0 -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+## ADD YOUR RULES BELOW
+
+# Allow ssh only within network
+$ipt -A INPUT -p tcp --dport 22 -s 172.20.0.0/16 -m state --state NEW,ESTABLISHED -j ACCEPT
+$ipt -A OUTPUT -p tcp --sport 22 -d 172.20.0.0/16 -m state --state ESTABLISHED -j ACCEPT
+
+# Allow http/https in/output
+$ipt -A INPUT -p tcp --destination-port 80 -j ACCEPT
+$ipt -A OUTPUT -p tcp --dport 80 -j ACCEPT
+$ipt -A INPUT -p tcp --dport 443 -j ACCEPT
+$ipt -A OUTPUT -p tcp --dport 443 -j ACCEPT
+
+# Limit connection limits. Prevent dos attacks.
+$ipt -I INPUT -p tcp --dport 80 -m connlimit --connlimit-above 20 --connlimit-mask 32 -j DROP
+$ipt -I INPUT -p tcp --dport 443 -m connlimit --connlimit-above 20 --connlimit-mask 32 -j DROP
+
+# Log input and logs and drop all others.
+$ipt -A INPUT -j LOG
+$ipt -A FORWARD -j LOG
+$ipt -A INPUT -j DROP
 
 echo "Fixing repos..."
 cp /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.bak
@@ -391,6 +468,24 @@ echo "blacklist usb-storage" > /etc/modprobe.d/blacklist-usbstorage
 cp cent-rsyslog.conf /etc/rsyslog.conf
 
 echo "Install aide via yum, and follow the information at the DigitalOcean link - https://www.digitalocean.com/community/tutorials/how-to-install-aide-on-a-digitalocean-vps"
+yum makecache
+yum install yum-fastestmirror -y
+yum install shorewall -y
+
+rpm -e imagemagick
+rpm -e dovecot
+rpm -e evolution
+rpm -e gimp
+rpm -e openoffice
+rpm -e portmap
+rpm -e rhythmbox
+rpm -e bind* 
+rpm -e sane*
+rpm -e cups
+rpm -e dropbox*
+rpm -e ldapjdk 
+rpm -e proftpd*
+rpm -e samba*
 
 fi
 
