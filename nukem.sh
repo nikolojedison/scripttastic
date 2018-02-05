@@ -332,7 +332,8 @@ echo "Fixing repos..."
 cp /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.bak
 cp base.repo /etc/yum.repos.d/CentOS-Base.repo
 cp rsyslog.repo /etc/yum.repos.d/rsyslog.repo
-yum update
+rm -rf rpmforge.repo
+rm -rf mirrors-rpmforge*
 
 # Stop and disable unneeded services
 echo "Disabling services..."
@@ -469,6 +470,7 @@ cp cent-rsyslog.conf /etc/rsyslog.conf
 
 echo "Install aide via yum, and follow the information at the DigitalOcean link - https://www.digitalocean.com/community/tutorials/how-to-install-aide-on-a-digitalocean-vps"
 yum makecache
+yum install aide -y
 yum install yum-fastestmirror -y
 yum install shorewall -y
 
