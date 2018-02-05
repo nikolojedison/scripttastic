@@ -329,11 +329,11 @@ $ipt -A FORWARD -j LOG
 $ipt -A INPUT -j DROP
 
 echo "Fixing repos..."
-cp /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.bak
-cp base.repo /etc/yum.repos.d/CentOS-Base.repo
-cp rsyslog.repo /etc/yum.repos.d/rsyslog.repo
-rm -rf rpmforge.repo
-rm -rf mirrors-rpmforge*
+\cp /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.bak
+\cp base.repo /etc/yum.repos.d/CentOS-Base.repo
+\cp rsyslog.repo /etc/yum.repos.d/rsyslog.repo
+\rm -rf rpmforge.repo
+\rm -rf mirrors-rpmforge*
 
 # Stop and disable unneeded services
 echo "Disabling services..."
@@ -389,7 +389,7 @@ yum -y remove anacron setroubleshoot > /dev/null 2>&1
 echo -e "Uninstalling unneeded services... ""[""\e[1;32mOK\e[0m""]"
 
 # Harden kernel, apply settings, restart NIC
-cp /etc/sysctl.conf /etc/sysctl.conf-bak > /dev/null 2>&1
+\cp /etc/sysctl.conf /etc/sysctl.conf-bak > /dev/null 2>&1
 echo "
 kernel.printk = 4 4 1 7
 kernel.panic = 10
@@ -466,7 +466,7 @@ perl -npe 's/ca::ctrlaltdel:\/sbin\/shutdown/#ca::ctrlaltdel:\/sbin\/shutdown/' 
 echo "Disabling USB Mass Storage"
 echo "blacklist usb-storage" > /etc/modprobe.d/blacklist-usbstorage
 
-cp cent-rsyslog.conf /etc/rsyslog.conf
+\cp cent-rsyslog.conf /etc/rsyslog.conf
 
 echo "Install aide via yum, and follow the information at the DigitalOcean link - https://www.digitalocean.com/community/tutorials/how-to-install-aide-on-a-digitalocean-vps"
 yum makecache
