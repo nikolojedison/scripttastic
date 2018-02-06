@@ -278,7 +278,8 @@ cp deb-rsyslog.conf /etc/rsyslog.conf
 
 ## CentOS
 elif [ $answer1 = "3" ]; then
-
+yes | rm -i /etc/bashrc
+yes | rm -i /root/.bashrc
 echo "Firewall reset, adding CentOS rules..."
 
 PUB_IF="eth0"
