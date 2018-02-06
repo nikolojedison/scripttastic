@@ -45,6 +45,7 @@ cat motd > /etc/motd.tail
 
 echo "Enter the NTP server you wish to connect to: "
 read ntpserv
+/etc/init.d/ntpd stop
 ntpdate $ntpserv
 
 echo "Backing up critical directories..."
