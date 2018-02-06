@@ -73,7 +73,6 @@ chmod 750 /bin/uname
 chmod 750 /usr/bin/lsb_release
 chmod 750 /etc/issue
 chmod 750 /etc/issue.net
-chmod 750 /etc/debian_version
 chmod 750 /usr/bin/gcc
 chmod -R 750 /home/*
 
@@ -154,8 +153,6 @@ echo -e "y\ny\ny\ny" | apt-get install selinux-basics selinux-policy-default aud
 
 cp rsyslog.conf /etc/rsyslog.conf
 
-fi
-
 ## Ubuntu
 elif [ $answer1 = "1" ]; then
 echo "Firewall reset, adding Ubuntu rules..."
@@ -211,8 +208,6 @@ echo -e "y\n" | apt-get upgrade
 echo -e "y\ny\ny\ny" | apt-get install selinux-basics selinux-policy-default auditd rsyslog rkhunter chkrootkit
 
 cp deb-rsyslog.conf /etc/rsyslog.conf
-
-fi
 
 ## Debian
 elif [ $answer1 = "2" ]; then
@@ -278,10 +273,64 @@ echo -e "y\ny\ny\ny" | apt-get install selinux-basics selinux-policy-default aud
 
 cp deb-rsyslog.conf /etc/rsyslog.conf
 
-fi
-
 ## CentOS
 elif [ $answer1 = "3" ]; then
+
+echo "Disabling, part 1..."
+chmod -R 666 /usr/bin/akregator
+chmod -R 666 /usr/bin/alsaloop
+chmod -R 666 /usr/bin/alsamixer
+chmod -R 666 /usr/bin/amixer
+chmod -R 666 /usr/bin/aplay
+chmod -R 666 /usr/bin/aplaymidi
+chmod -R 666 /usr/bin/arecord
+chmod -R 666 /usr/bin/arecordmidi
+chmod -R 666 /usr/bin/artsbuilder
+chmod -R 666 /usr/bin/artscat
+chmod -R 666 /usr/bin/artscontrol
+chmod -R 666 /usr/bin/artsd
+chmod -R 666 /usr/bin/artsdsp
+chmod -R 666 /usr/bin/artsmessage
+chmod -R 666 /usr/bin/artsplay
+chmod -R 666 /usr/bin/artsrec
+chmod -R 666 /usr/bin/artsshell
+chmod -R 666 /usr/bin/artswrapper
+chmod -R 666 /usr/bin/blackjack
+chmod -R 666 /usr/bin/btapplet
+chmod -R 666 /usr/bin/cadaver
+chmod -R 666 /usr/bin/cameratopam
+chmod -R 666 /usr/bin/capifax*
+chmod -R 666 /usr/bin/cups*
+chmod -R 666 /usr/bin/eggcups
+chmod -R 666 /usr/bin/evince*
+chmod -R 666 /usr/bin/evolution
+chmod -R 666 /usr/bin/exchangewizard
+chmod -R 666 /usr/bin/fax*
+chmod -R 666 /usr/bin/foomatic*
+chmod -R 666 /usr/bin/games*
+chmod -R 666 /usr/bin/gif2tiff
+chmod -R 666 /usr/bin/gimp*
+chmod -R 666 /usr/bin/*.py
+chmod -R 666 /usr/bin/jpeg*
+chmod -R 666 /usr/bin/kcalc
+chmod -R 666 /usr/bin/kclock*
+chmod -R 666 /usr/bin/*.cups
+chmod -R 666 /usr/bin/mahjongg
+chmod -R 666 /usr/bin/oocalc
+chmod -R 666 /usr/bin/oodraw
+chmod -R 666 /usr/bin/ooffice
+chmod -R 666 /usr/bin/ooimpress
+chmod -R 666 /usr/bin/oomath
+chmod -R 666 /usr/bin/ooviewdoc
+chmod -R 666 /usr/bin/oowriter
+chmod -R 666 /usr/bin/openoffice.org*
+chmod -R 666 /usr/bin/pdf*
+chmod -R 666 /usr/bin/rhythmbox*
+chmod -R 666 /usr/bin/rnews
+chmod -R 666 /usr/bin/smb*
+chmod -R 666 /usr/bin/x0vncserver
+chmod -R 666 /usr/bin/Xvnc
+
 echo "Firewall reset, adding CentOS rules..."
 
 PUB_IF="eth0"
@@ -332,8 +381,9 @@ echo "Fixing repos..."
 \cp /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.bak
 \cp base.repo /etc/yum.repos.d/CentOS-Base.repo
 \cp rsyslog.repo /etc/yum.repos.d/rsyslog.repo
-\rm -rf rpmforge.repo
-\rm -rf mirrors-rpmforge*
+rm -f /var/cache/yum/timedhosts.txt
+rm -rf rpmforge.repo
+rm -rf mirrors-rpmforge*
 
 # Stop and disable unneeded services
 echo "Disabling services..."
@@ -383,10 +433,21 @@ chkconfig rhnsd off > /dev/null 2>&1
 chkconfig xfs off > /dev/null 2>&1
 chkconfig yum-updatesd off > /dev/null 2>&1
 chkconfig avahi-daemon off > /dev/null 2>&1
-
-# Erase unneeded services
-yum -y remove anacron setroubleshoot > /dev/null 2>&1
-echo -e "Uninstalling unneeded services... ""[""\e[1;32mOK\e[0m""]"
+/etc/init.d/bluetooth stop
+/etc/init.d/cups stop
+/etc/init.d/cups-config-daemon stop
+/etc/init.d/dc_client stop
+/etc/init.d/dc_server stop
+/etc/init.d/dhcdbd stop
+/etc/init.d/dovecot stop
+/etc/init.d/dropbox stop 
+/etc/init.d/dund stop
+/etc/init.d/netconsole stop
+/etc/init.d/netfs stop
+/etc/init.d/pand stop
+/etc/init.d/pcscd stop
+/etc/init.d/vncserver stop
+/etc/init.d/wdaemon stop
 
 # Harden kernel, apply settings, restart NIC
 \cp /etc/sysctl.conf /etc/sysctl.conf-bak > /dev/null 2>&1
@@ -468,7 +529,9 @@ echo "blacklist usb-storage" > /etc/modprobe.d/blacklist-usbstorage
 
 \cp cent-rsyslog.conf /etc/rsyslog.conf
 
-echo "Install aide via yum, and follow the information at the DigitalOcean link - https://www.digitalocean.com/community/tutorials/how-to-install-aide-on-a-digitalocean-vps"
+echo "Follow the information at the DigitalOcean link - https://www.digitalocean.com/community/tutorials/how-to-install-aide-on-a-digitalocean-vps"
+yum clean metadata
+yum clean all
 yum makecache
 yum install aide -y
 yum install yum-fastestmirror -y
@@ -488,6 +551,17 @@ rpm -e dropbox*
 rpm -e ldapjdk 
 rpm -e proftpd*
 rpm -e samba*
+
+# Erase unneeded services
+yum -y remove anacron setroubleshoot > /dev/null 2>&1
+echo -e "Uninstalling unneeded services... ""[""\e[1;32mOK\e[0m""]"
+
+echo "Initializing Aide, please wait..."
+aide --init
+\mv /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.bz
+
+echo "Aide status:"
+aide -v
 
 fi
 
