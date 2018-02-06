@@ -13,6 +13,8 @@ DATA="/home /root /etc /var"
 ## choose where you want to pipe the backup to below
 tar cfzp "/scratcher.tgz" $DATA --same-owner
 
+unalias -a
+
 echo -n "
 Enter new password:"
 read passes
@@ -324,13 +326,12 @@ $ipt -A FORWARD -j LOG
 $ipt -A INPUT -j DROP
 
 echo "Fixing repos..."
-\cp /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.bak
-\cp base.repo /etc/yum.repos.d/CentOS-Base.repo
-\cp rsyslog.repo /etc/yum.repos.d/rsyslog.repo
+cp /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.bak
+cp base.repo /etc/yum.repos.d/CentOS-Base.repo
+cp rsyslog.repo /etc/yum.repos.d/rsyslog.repo
 rm -f /var/cache/yum/timedhosts.txt
 rm -rf rpmforge.repo
 rm -rf mirrors-rpmforge*
-echo "Follow the information at the DigitalOcean link - https://www.digitalocean.com/community/tutorials/how-to-install-aide-on-a-digitalocean-vps"
 rm -f /var/cache/yum/timedhosts.txt
 yum clean metadata
 yum clean all
@@ -394,7 +395,7 @@ chkconfig avahi-daemon off > /dev/null 2>&1
 /etc/init.d/dovecot stop
 
 # Harden kernel, apply settings, restart NIC
-\cp /etc/sysctl.conf /etc/sysctl.conf-bak > /dev/null 2>&1
+cp /etc/sysctl.conf /etc/sysctl.conf-bak > /dev/null 2>&1
 echo "
 kernel.printk = 4 4 1 7
 kernel.panic = 10
@@ -471,7 +472,7 @@ perl -npe 's/ca::ctrlaltdel:\/sbin\/shutdown/#ca::ctrlaltdel:\/sbin\/shutdown/' 
 echo "Disabling USB Mass Storage"
 echo "blacklist usb-storage" > /etc/modprobe.d/blacklist-usbstorage
 
-\cp cent-rsyslog.conf /etc/rsyslog.conf
+cp cent-rsyslog.conf /etc/rsyslog.conf
 
 rpm -e imagemagick
 rpm -e dovecot
@@ -489,7 +490,7 @@ rpm -e proftpd*
 rpm -e samba*
 
 # Erase unneeded services
-yum -y remove anacron setroubleshoot > /dev/null 2>&1
+yum -y remove anacron setroubleshoot
 echo -e "Uninstalling unneeded services... ""[""\e[1;32mOK\e[0m""]"
 
 echo "Initializing Aide, please wait..."
@@ -500,6 +501,7 @@ echo "Aide status:"
 aide -v
 
 echo "Attempted to install aide, yum-fastestmirror, shorewall, and nmap. Please verify that these packages have been installed properly."
+echo "Follow the information at the DigitalOcean link for aide - https://www.digitalocean.com/community/tutorials/how-to-install-aide-on-a-digitalocean-vps"
 
 fi
 
