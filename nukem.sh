@@ -330,10 +330,10 @@ echo "Fixing repos..."
 yes | cp /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.bak
 yes | cp base.repo /etc/yum.repos.d/CentOS-Base.repo
 yes | cp rsyslog.repo /etc/yum.repos.d/rsyslog.repo
-yes | rm -f /var/cache/yum/timedhosts.txt
-yes | rm -rf rpmforge.repo
-yes | rm -rf mirrors-rpmforge*
-yes | rm -f /var/cache/yum/timedhosts.txt
+rm -f /var/cache/yum/timedhosts.txt
+rm -rf rpmforge.repo
+rm -rf mirrors-rpmforge*
+rm -f /var/cache/yum/timedhosts.txt
 yum clean metadata
 yum clean all
 yum makecache
