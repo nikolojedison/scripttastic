@@ -278,8 +278,8 @@ cp deb-rsyslog.conf /etc/rsyslog.conf
 
 ## CentOS
 elif [ $answer1 = "3" ]; then
-yes | rm -i /etc/bashrc
-yes | rm -i /root/.bashrc
+yes | rm /etc/bashrc
+yes | rm /root/.bashrc
 echo "Firewall reset, adding CentOS rules..."
 
 PUB_IF="eth0"
@@ -327,13 +327,13 @@ $ipt -A FORWARD -j LOG
 $ipt -A INPUT -j DROP
 
 echo "Fixing repos..."
-cp /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.bak
-cp base.repo /etc/yum.repos.d/CentOS-Base.repo
-cp rsyslog.repo /etc/yum.repos.d/rsyslog.repo
-rm -f /var/cache/yum/timedhosts.txt
-rm -rf rpmforge.repo
-rm -rf mirrors-rpmforge*
-rm -f /var/cache/yum/timedhosts.txt
+yes | cp /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.bak
+yes | cp base.repo /etc/yum.repos.d/CentOS-Base.repo
+yes | cp rsyslog.repo /etc/yum.repos.d/rsyslog.repo
+yes | rm -f /var/cache/yum/timedhosts.txt
+yes | rm -rf rpmforge.repo
+yes | rm -rf mirrors-rpmforge*
+yes | rm -f /var/cache/yum/timedhosts.txt
 yum clean metadata
 yum clean all
 yum makecache
@@ -396,7 +396,7 @@ chkconfig avahi-daemon off > /dev/null 2>&1
 /etc/init.d/dovecot stop
 
 # Harden kernel, apply settings, restart NIC
-cp /etc/sysctl.conf /etc/sysctl.conf-bak > /dev/null 2>&1
+yes | cp /etc/sysctl.conf /etc/sysctl.conf-bak
 echo "
 kernel.printk = 4 4 1 7
 kernel.panic = 10
@@ -496,7 +496,7 @@ echo -e "Uninstalling unneeded services... ""[""\e[1;32mOK\e[0m""]"
 
 echo "Initializing Aide, please wait..."
 aide --init
-\mv /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.bz
+mv /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.bz
 
 echo "Aide status:"
 aide -v
