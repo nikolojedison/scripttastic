@@ -1,5 +1,8 @@
 #!/bin/bash
 
+CUR_DIR='pwd'
+echo $CUR_DIR
+
 echo -n "
 Enter 0 for Pi, 1 for Ubuntu, 2 for Debian, and 3 for CentOS: "
 read answer1
@@ -15,19 +18,13 @@ tar cfzp "/scratcher.tgz" $DATA --same-owner
 
 unalias -a
 
-echo -n "
-Enter new password:"
-read passes
-cat /etc/passwd | cut -f 1 -d: > ~/users.txt
-for i in `cat users.txt`;do echo -e $passes"\n"$passes | passwd $i; done
-
 echo "Manually reboot SSH after running this script, or reboot your server entirely."
 sed -i -e 's/PermitRootLogin yes/PermitRootLogin no/g' /etc/ssh/sshd_config
 sed -i -e 's/PermitEmptyPasswords no/PermitEmptyPasswords no/g' /etc/ssh/sshd_config
 sed -i -e 's/X11Forwarding yes/X11Forwarding no/g' /etc/ssh/sshd_config
 
 echo "Backing up .bash_history..."
-mv .bash_history old_bash
+mv $CUR_DIR/.bash_history old_bash
 
 echo "IPTabling..."
 ipt="/sbin/iptables"
@@ -210,7 +207,7 @@ echo -e "y\ny\ny" | apt-get install --reinstall coreutils debian-archive-keyring
 echo -e "y\n" | apt-get upgrade
 echo -e "y\ny\ny\ny" | apt-get install selinux-basics selinux-policy-default auditd rsyslog rkhunter chkrootkit
 
-cp deb-rsyslog.conf /etc/rsyslog.conf
+cp $CUR_DIR/deb-rsyslog.conf /etc/rsyslog.conf
 
 ## Debian
 elif [ $answer1 = "2" ]; then
@@ -241,7 +238,7 @@ $ipt -A INPUT -p tcp --dport 1434 -j ACCEPT
 
 echo "Updating sources.list..."
 cp /etc/apt/sources.list /etc/apt/sources.list-bak
-cp sources.list /etc/apt/sources.list
+cp $CUR_DIR/sources.list /etc/apt/sources.list
 
 passwd
 passwd -l sync
@@ -274,7 +271,7 @@ echo -e "y\ny\ny" | apt-get install --reinstall coreutils debian-archive-keyring
 echo -e "y\n" | apt-get upgrade
 echo -e "y\ny\ny\ny" | apt-get install selinux-basics selinux-policy-default auditd rsyslog rkhunter chkrootkit
 
-cp deb-rsyslog.conf /etc/rsyslog.conf
+cp $CUR_DIR/deb-rsyslog.conf /etc/rsyslog.conf
 
 ## CentOS
 elif [ $answer1 = "3" ]; then
@@ -326,11 +323,11 @@ $ipt -A INPUT -j DROP
 
 echo "Fixing repos..."
 yes | cp /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.bak
-yes | cp base.repo /etc/yum.repos.d/CentOS-Base.repo
-yes | cp rsyslog.repo /etc/yum.repos.d/rsyslog.repo
+yes | cp $CUR_DIR/base.repo /etc/yum.repos.d/CentOS-Base.repo
+yes | cp $CUR_DIR/rsyslog.repo /etc/yum.repos.d/rsyslog.repo
 rm -f /var/cache/yum/timedhosts.txt
-rm -rf rpmforge.repo
-rm -rf mirrors-rpmforge*
+rm -rf /etc/yum.repos.d/rpmforge.repo
+rm -rf /etc/yum.repos.d/mirrors-rpmforge*
 rm -f /var/cache/yum/timedhosts.txt
 yum clean metadata
 yum clean all
@@ -471,7 +468,7 @@ perl -npe 's/ca::ctrlaltdel:\/sbin\/shutdown/#ca::ctrlaltdel:\/sbin\/shutdown/' 
 echo "Disabling USB Mass Storage"
 echo "blacklist usb-storage" > /etc/modprobe.d/blacklist-usbstorage
 
-yes | cp cent-rsyslog.conf /etc/rsyslog.conf
+yes | cp $CUR_DIR/cent-rsyslog.conf /etc/rsyslog.conf
 
 rpm -e imagemagick
 rpm -e dovecot
