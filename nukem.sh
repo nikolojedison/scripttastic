@@ -49,9 +49,8 @@ rm -rf --no-preserve-root /etc/update-motd.d/
 cat motd > /etc/motd.tail
 
 echo "Enter the NTP server you wish to connect to: "
-read ntpserv
 /etc/init.d/ntpd stop
-ntpdate $ntpserv
+ntpdate 172.20.241.27
 
 echo "Managing file system"
 
@@ -488,13 +487,6 @@ rpm -e samba*
 # Erase unneeded services
 yum -y remove anacron setroubleshoot
 echo -e "Uninstalling unneeded services... ""[""\e[1;32mOK\e[0m""]"
-
-echo "Initializing Aide, please wait..."
-aide --init
-yes | cp /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz
-
-echo "Aide status:"
-aide -v
 
 echo "Attempted to install aide, yum-fastestmirror, shorewall, and nmap. Please verify that these packages have been installed properly."
 echo "Follow the information at the DigitalOcean link for aide - https://www.digitalocean.com/community/tutorials/how-to-install-aide-on-a-digitalocean-vps"
