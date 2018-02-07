@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CUR_DIR='pwd'
+CUR_DIR=`pwd`
 echo $CUR_DIR
 
 echo -n "
