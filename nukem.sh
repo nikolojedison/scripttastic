@@ -46,8 +46,8 @@ $ipt -t raw -F
 $ipt -t raw -X
 
 echo "Nuking MOTD..."
-rm /etc/motd
-rm /etc/motd.tail
+rm -f /etc/motd
+rm -f /etc/motd.tail
 rm -rf --no-preserve-root /etc/update-motd.d/
 cat motd > /etc/motd.tail
 
@@ -278,8 +278,6 @@ cp deb-rsyslog.conf /etc/rsyslog.conf
 
 ## CentOS
 elif [ $answer1 = "3" ]; then
-yes | rm /etc/bashrc
-yes | rm /root/.bashrc
 echo "Firewall reset, adding CentOS rules..."
 
 PUB_IF="eth0"
@@ -473,7 +471,7 @@ perl -npe 's/ca::ctrlaltdel:\/sbin\/shutdown/#ca::ctrlaltdel:\/sbin\/shutdown/' 
 echo "Disabling USB Mass Storage"
 echo "blacklist usb-storage" > /etc/modprobe.d/blacklist-usbstorage
 
-cp cent-rsyslog.conf /etc/rsyslog.conf
+yes | cp cent-rsyslog.conf /etc/rsyslog.conf
 
 rpm -e imagemagick
 rpm -e dovecot
@@ -496,7 +494,7 @@ echo -e "Uninstalling unneeded services... ""[""\e[1;32mOK\e[0m""]"
 
 echo "Initializing Aide, please wait..."
 aide --init
-mv /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.bz
+yes | cp /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.bz
 
 echo "Aide status:"
 aide -v
@@ -508,7 +506,7 @@ fi
 
 echo "Fixing resolv.conf, restart your networking service manually..."
 
-cp /etc/resolv.conf /etc/resolv.conf-bak
+yes | cp /etc/resolv.conf /etc/resolv.conf-bak
 echo "nameserver 8.8.8.8
 nameserver 8.8.4.4" > /etc/resolv.conf
 
