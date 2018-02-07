@@ -491,7 +491,7 @@ echo -e "Uninstalling unneeded services... ""[""\e[1;32mOK\e[0m""]"
 
 echo "Initializing Aide, please wait..."
 aide --init
-yes | cp /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.bz
+yes | cp /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz
 
 echo "Aide status:"
 aide -v
