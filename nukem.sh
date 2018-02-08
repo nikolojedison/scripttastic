@@ -48,18 +48,18 @@ rm -f /etc/motd.tail
 rm -rf --no-preserve-root /etc/update-motd.d/
 cat motd > /etc/motd.tail
 
-echo "Enter the NTP server you wish to connect to: "
+echo "Updating NTP..."
 /etc/init.d/ntpd stop
 ntpdate 172.20.241.27
 
-echo "Managing file system"
+echo "Cleaning /home/..."
 
 sudo find /home -iname "*.mp3" -delete
 sudo find /home -iname "*.jpg" -delete
 sudo find /home -iname "*.png" -delete
 sudo find /home -iname "*.mp4" -delete
 
-echo "D I S A B L E"
+echo "Fixing permissions on /usr/ and /var/..."
 chmod 750 /usr/bin/python
 chmod 750 /usr/bin/perl
 chmod 750 /usr/bin/ruby
@@ -79,18 +79,23 @@ echo "Disabling syn floods..."
 sysctl -w net.ipv4.tcp_syncookies=1 > /dev/null
 echo "net.ipv4.tcp_syncookies=1" >> /etc/sysctl.conf
 
+echo "Limiting tty..."
 echo "tty1" > /etc/securetty
 chmod 700 /root
 
+echo "Updating password limitations..."
 perl -npe 's/PASS_MIN_DAYS\s+0/PASS_MIN_DAYS 1/g' -i /etc/login.defs
 
+echo "Fixing permissions on shell .rc files..."
 perl -npe 's/umask\s+0\d2/umask 077/g' -i /etc/bashrc
 perl -npe 's/umask\s+0\d2/umask 077/g' -i /etc/csh.cshrc
 
+echo "Improving os-security..."
 echo "readonly TMOUT=300" >> /etc/profile.d/os-security.sh
 echo "readonly HISTFILE" >> /etc/profile.d/os-security.sh
 chmod +x /etc/profile.d/os-security.sh
 
+echo "Updating cron..."
 touch /etc/cron.allow
 chmod 600 /etc/cron.allow
 awk -F: '{print $1}' /etc/passwd | grep -v root > /etc/cron.deny
@@ -150,7 +155,9 @@ echo -e "y\ny\ny" | apt-get install --reinstall coreutils debian-archive-keyring
 echo -e "y\n" | apt-get upgrade
 echo -e "y\ny\ny\ny" | apt-get install selinux-basics selinux-policy-default auditd rsyslog
 
-cp rsyslog.conf /etc/rsyslog.conf
+echo "Updating rsyslog.conf & restarting rsyslog..."
+cp -f $CUR_DIR/rsyslog.conf /etc/rsyslog.conf
+/etc/init.d/rsyslog restart
 
 ## Ubuntu
 elif [ $answer1 = "1" ]; then
@@ -167,8 +174,7 @@ cp /etc/apt/sources.list /etc/apt/sources.list.bak
 sed -i -e 's/us.archive.ubuntu.com/old-releases.ubuntu.com/g' /etc/apt/sources.list
 sed -i -e 's/security.ubuntu.com/old-releases.ubuntu.com/g' /etc/apt/sources.list
 
-sudo apt-get purge apache2
-passwd
+echo "Locking bad accounts..."
 passwd -l daemon
 passwd -l bin
 passwd -l sys
@@ -206,7 +212,9 @@ echo -e "y\ny\ny" | apt-get install --reinstall coreutils debian-archive-keyring
 echo -e "y\n" | apt-get upgrade
 echo -e "y\ny\ny\ny" | apt-get install selinux-basics selinux-policy-default auditd rsyslog rkhunter chkrootkit
 
+echo "Updating rsyslog.conf & restarting rsyslog..."
 cp $CUR_DIR/deb-rsyslog.conf /etc/rsyslog.conf
+/etc/init.d/rsyslog restart
 
 ## Debian
 elif [ $answer1 = "2" ]; then
@@ -239,7 +247,7 @@ echo "Updating sources.list..."
 cp /etc/apt/sources.list /etc/apt/sources.list-bak
 cp $CUR_DIR/sources.list /etc/apt/sources.list
 
-passwd
+echo "Locking accounts..."
 passwd -l sync
 passwd -l games
 passwd -l lp
@@ -270,6 +278,7 @@ echo -e "y\ny\ny" | apt-get install --reinstall coreutils debian-archive-keyring
 echo -e "y\n" | apt-get upgrade
 echo -e "y\ny\ny\ny" | apt-get install selinux-basics selinux-policy-default auditd rsyslog rkhunter chkrootkit
 
+echo "Updating rsyslog.conf & restarting rsyslog..."
 cp $CUR_DIR/deb-rsyslog.conf /etc/rsyslog.conf
 
 ## CentOS
@@ -320,7 +329,7 @@ $ipt -A INPUT -j LOG
 $ipt -A FORWARD -j LOG
 $ipt -A INPUT -j DROP
 
-echo "Fixing repos..."
+echo "Fixing yum repos..."
 yes | cp /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.bak
 yes | cp $CUR_DIR/base.repo /etc/yum.repos.d/CentOS-Base.repo
 yes | cp $CUR_DIR/rsyslog.repo /etc/yum.repos.d/rsyslog.repo
@@ -331,10 +340,27 @@ rm -f /var/cache/yum/timedhosts.txt
 yum clean metadata
 yum clean all
 yum makecache
+
+echo "Removing bad packages..."
+yum -y remove anacron setroubleshoot
+rpm -e dovecot
+rpm -e evolution
+rpm -e gimp
+rpm -e openoffice
+rpm -e portmap
+rpm -e rhythmbox
+rpm -e sane*
+rpm -e cups
+rpm -e dropbox*
+rpm -e ldapjdk 
+rpm -e proftpd*
+rpm -e samba*
+
+echo "Installing packages..."
 yum install aide -y
 yum install yum-fastestmirror -y
-yum install shorewall -y
 yum install nmap -y
+yum install rsyslog -y
 
 # Stop and disable unneeded services
 echo "Disabling services..."
@@ -384,12 +410,9 @@ chkconfig rhnsd off > /dev/null 2>&1
 chkconfig xfs off > /dev/null 2>&1
 chkconfig yum-updatesd off > /dev/null 2>&1
 chkconfig avahi-daemon off > /dev/null 2>&1
-/etc/init.d/bluetooth stop
-/etc/init.d/cups stop
-/etc/init.d/cups-config-daemon stop
-/etc/init.d/dovecot stop
 
 # Harden kernel, apply settings, restart NIC
+echo "Hardening kernel..."
 yes | cp /etc/sysctl.conf /etc/sysctl.conf-bak
 echo "
 kernel.printk = 4 4 1 7
@@ -460,33 +483,14 @@ net.ipv6.conf.default.accept_redirects = 0
 net.ipv6.conf.all.secure_redirects = 1
 net.ipv6.conf.default.secure_redirects = 1" > /etc/sysctl.conf
 sysctl -p > /dev/null 2>&1
-echo -e "Tuning and hardening kernel... ""[""\e[1;32mOK\e[0m""]"
-
 perl -npe 's/ca::ctrlaltdel:\/sbin\/shutdown/#ca::ctrlaltdel:\/sbin\/shutdown/' -i /etc/inittab
 
-echo "Disabling USB Mass Storage"
+echo "Disabling USB Mass Storage..."
 echo "blacklist usb-storage" > /etc/modprobe.d/blacklist-usbstorage
 
+echo "Updating rsyslog.conf & restarting rsyslog..."
 yes | cp $CUR_DIR/cent-rsyslog.conf /etc/rsyslog.conf
-
-rpm -e imagemagick
-rpm -e dovecot
-rpm -e evolution
-rpm -e gimp
-rpm -e openoffice
-rpm -e portmap
-rpm -e rhythmbox
-rpm -e bind* 
-rpm -e sane*
-rpm -e cups
-rpm -e dropbox*
-rpm -e ldapjdk 
-rpm -e proftpd*
-rpm -e samba*
-
-# Erase unneeded services
-yum -y remove anacron setroubleshoot
-echo -e "Uninstalling unneeded services... ""[""\e[1;32mOK\e[0m""]"
+/etc/init.d/rsyslog restart
 
 echo "Attempted to install aide, yum-fastestmirror, shorewall, and nmap. Please verify that these packages have been installed properly."
 echo "Follow the information at the DigitalOcean link for aide - https://www.digitalocean.com/community/tutorials/how-to-install-aide-on-a-digitalocean-vps"
@@ -497,9 +501,10 @@ echo "Fixing resolv.conf, restart your networking service manually..."
 
 yes | cp /etc/resolv.conf /etc/resolv.conf-bak
 echo "nameserver 8.8.8.8
+nameserver 172.20.241.27
 nameserver 8.8.4.4" > /etc/resolv.conf
 
-echo "AppArmor status:"
-aa-status
+echo "Aide status:"
+aide -v
 
 echo "System restart recommended. Please ensure all work is saved before restarting."
