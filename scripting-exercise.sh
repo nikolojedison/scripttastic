@@ -1,10 +1,10 @@
 #!/bin/sh
 
-NAME="(uname -a)"
-MSG="(dmesg)"
-ROOT="(ls -a /)"
-WEB="(ls -a /var/www/)"
-HOME="(ls -a /home/)"
+NAME=`(uname -a)`
+MSG=`(dmesg)`
+ROOT=`(ls -a /)`
+WEB=`(ls -a /var/www/)`
+HOME=`(ls -a /home/)`
 
 echo "Name: ${NAME}"
 echo "dmesg: ${MSG}"
