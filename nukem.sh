@@ -207,15 +207,12 @@ passwd -l gnats
 passwd -l nobody
 passwd -l libuuid
 passwd -l dhcp
-passwd -l syslog
 passwd -l klog
-passwd -l bind
 passwd -l adam
 passwd -l statd
-passwd -l administrator
-passwd -l ntp
 passwd -l messagebus
 sudo apt-get update
+sudo apt-get remove apache2
 sudo apt-get autoremove
 
 echo "Updating/upgrading!"
