@@ -85,7 +85,6 @@ echo "net.ipv4.tcp_syncookies=1" >> /etc/sysctl.conf
 
 echo "Limiting tty..."
 echo "tty1" > /etc/securetty
-chmod 700 /root
 
 echo "Updating password limitations..."
 perl -npe 's/PASS_MIN_DAYS\s+0/PASS_MIN_DAYS 1/g' -i /etc/login.defs
@@ -157,7 +156,7 @@ apt-get update
 apt-get clean all
 echo -e "y\ny\ny" | apt-get install --reinstall coreutils debian-archive-keyring
 echo -e "y\n" | apt-get upgrade
-echo -e "y\ny\ny\ny" | apt-get install selinux-basics selinux-policy-default auditd rsyslog
+echo -e "y\ny\ny\ny" | apt-get install selinux-basics selinux-policy-default auditd rsyslog apparmor-profiles apparmor-profiles
 
 echo "Updating rsyslog.conf & restarting rsyslog..."
 cp -f $CUR_DIR/rsyslog.conf /etc/rsyslog.conf
@@ -211,16 +210,17 @@ passwd -l klog
 passwd -l adam
 passwd -l statd
 passwd -l messagebus
-sudo apt-get update
-sudo apt-get remove apache2
-sudo apt-get autoremove
 
 echo "Updating/upgrading!"
 apt-get update
+apt-get remove apache2
+apt-get autoremove
 apt-get clean all
 echo -e "y\ny\ny" | apt-get install --reinstall coreutils debian-archive-keyring
 echo -e "y\n" | apt-get upgrade
-echo -e "y\ny\ny\ny" | apt-get install selinux-basics selinux-policy-default auditd rsyslog rkhunter chkrootkit
+echo -e "y\ny\ny\ny" | apt-get install selinux-basics selinux-policy-default auditd rsyslog rkhunter chkrootkit apparmor-profiles apparmor-utils aide nmap tcptrack
+
+echo "Attempted to install selinux, auditd, rsyslog, rkhunter, chkrootkit, nmap, tcptrack, and apparmor... Please verify that these packages have been installed properly."
 
 echo "Updating rsyslog.conf & restarting rsyslog..."
 cp $CUR_DIR/deb-rsyslog.conf /etc/rsyslog.conf
@@ -270,7 +270,6 @@ passwd -l lp
 passwd -l news
 passwd -l uucp
 passwd -l proxy
-passwd -l www-data
 passwd -l backup
 passwd -l list
 passwd -l irc
@@ -296,7 +295,9 @@ apt-get update
 apt-get clean all
 echo -e "y\ny\ny" | apt-get install --reinstall coreutils debian-archive-keyring
 echo -e "y\n" | apt-get upgrade
-echo -e "y\ny\ny\ny" | apt-get install selinux-basics selinux-policy-default auditd rsyslog rkhunter chkrootkit
+echo -e "y\ny\ny\ny" | apt-get install selinux-basics selinux-policy-default auditd rsyslog rkhunter chkrootkit apparmor-profiles apparmor-utils aide nmap tcptrack
+
+echo "Attempted to install selinux, auditd, rsyslog, rkhunter, chkrootkit, nmap, tcptrack, and apparmor... Please verify that these packages have been installed properly."
 
 echo "Updating rsyslog.conf & restarting rsyslog..."
 cp $CUR_DIR/deb-rsyslog.conf /etc/rsyslog.conf
@@ -327,21 +328,26 @@ $ipt -A INPUT -i eth0 -m state --state ESTABLISHED,RELATED -j ACCEPT
 $ipt -A OUTPUT -o eth0 -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
 $ipt -A INPUT -p icmp --icmp-type 8 -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
 $ipt -A OUTPUT -p icmp --icmp-type 0 -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+# Allow ssh only in local subnet
 $ipt -A INPUT -p tcp --dport 22 -s 172.20.0.0/16 -m state --state NEW,ESTABLISHED -j ACCEPT
 $ipt -A OUTPUT -p tcp --sport 22 -d 172.20.0.0/16 -m state --state ESTABLISHED -j ACCEPT
-$ipt -A INPUT -j LOG
-$ipt -A FORWARD -j LOG
-$ipt -A INPUT -j DROP
 
 # Allow http/https in/output
 $ipt -A INPUT -p tcp --destination-port 80 -j ACCEPT
 $ipt -A OUTPUT -p tcp --dport 80 -j ACCEPT
 $ipt -A INPUT -p tcp --dport 443 -j ACCEPT
 $ipt -A OUTPUT -p tcp --dport 443 -j ACCEPT
+$ipt -A INPUT -p tcp --dport 21 -j ACCEPT
+$ipt -A OUTPUT -p tcp --dport 21 -j ACCEPT
 
 # Limit connection limits. Prevent dos attacks.
 $ipt -I INPUT -p tcp --dport 80 -m connlimit --connlimit-above 20 --connlimit-mask 32 -j DROP
 $ipt -I INPUT -p tcp --dport 443 -m connlimit --connlimit-above 20 --connlimit-mask 32 -j DROP
+$ipt -I INPUT -p tcp --dport 21 -m connlimit --connlimit-above 20 --connlimit-mask 32 -j DROP
+
+$ipt -A INPUT -j LOG
+$ipt -A FORWARD -j LOG
 
 echo "Fixing yum repos..."
 yes | cp /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.bak
@@ -378,52 +384,55 @@ yum install rsyslog -y
 
 # Stop and disable unneeded services
 echo "Disabling services..."
-service acpid stop > /dev/null 2>&1
-service portmap stop > /dev/null 2>&1
-service cpuspeed stop > /dev/null 2>&1
-service apmd stop > /dev/null 2>&1
-service autofs stop > /dev/null 2>&1
-service bluetooth stop > /dev/null 2>&1
-service hidd stop > /dev/null 2>&1
-service firstboot stop > /dev/null 2>&1
-service cups stop > /dev/null 2>&1
-service gpm stop > /dev/null 2>&1
-service hplip stop > /dev/null 2>&1
-service isdn stop > /dev/null 2>&1
-service kudzu stop > /dev/null 2>&1
-service kdump stop > /dev/null 2>&1
-service mcstrans stop > /dev/null 2>&1
-service pcscd stop > /dev/null 2>&1
-service readahead_early stop > /dev/null 2>&1
-service readahead_later stop > /dev/null 2>&1
-service setroubleshoot stop > /dev/null 2>&1
-service rhnsd stop > /dev/null 2>&1
-service xfs stop > /dev/null 2>&1
-service yum-updatesd stop > /dev/null 2>&1
-service avahi-daemon stop > /dev/null 2>&1
-chkconfig acpid off > /dev/null 2>&1
-chkconfig portmap off > /dev/null 2>&1
-chkconfig cpuspeed off > /dev/null 2>&1
-chkconfig apmd off > /dev/null 2>&1
-chkconfig autofs off > /dev/null 2>&1
-chkconfig bluetooth off > /dev/null 2>&1
-chkconfig hidd off > /dev/null 2>&1
-chkconfig firstboot off > /dev/null 2>&1
-chkconfig cups off > /dev/null 2>&1
-chkconfig gpm off > /dev/null 2>&1
-chkconfig hplip off > /dev/null 2>&1
-chkconfig isdn off > /dev/null 2>&1
-chkconfig kudzu off > /dev/null 2>&1
-chkconfig kdump off > /dev/null 2>&1
-chkconfig mcstrans off > /dev/null 2>&1
-chkconfig pcscd off > /dev/null 2>&1
-chkconfig readahead_early off > /dev/null 2>&1
-chkconfig readahead_later off > /dev/null 2>&1
-chkconfig setroubleshoot off > /dev/null 2>&1
-chkconfig rhnsd off > /dev/null 2>&1
-chkconfig xfs off > /dev/null 2>&1
-chkconfig yum-updatesd off > /dev/null 2>&1
-chkconfig avahi-daemon off > /dev/null 2>&1
+service acpid stop
+service portmap stop
+service cpuspeed stop
+service apmd stop
+service autofs stop
+service bluetooth stop
+service hidd stop
+service firstboot stop
+service cups stop
+service gpm stop
+service hplip stop
+service isdn stop
+service kudzu stop
+service kdump stop
+service mcstrans stop
+service pcscd stop
+service readahead_early stop
+service readahead_later stop
+service setroubleshoot stop
+service rhnsd stop
+service xfs stop
+service yum-updatesd stop
+service avahi-daemon stop
+chkconfig acpid off
+chkconfig portmap off
+chkconfig cpuspeed off
+chkconfig apmd off
+chkconfig autofs off
+chkconfig bluetooth off
+chkconfig hidd off
+chkconfig firstboot off
+chkconfig cups off
+chkconfig gpm off
+chkconfig hplip off
+chkconfig isdn off
+chkconfig kudzu off
+chkconfig kdump off
+chkconfig mcstrans off
+chkconfig pcscd off
+chkconfig readahead_early off
+chkconfig readahead_later off
+chkconfig setroubleshoot off
+chkconfig rhnsd off
+chkconfig xfs off
+chkconfig yum-updatesd off
+chkconfig avahi-daemon off
+
+echo "Enabling kernel auditing..."
+chkconfig auditd on
 
 # Harden kernel, apply settings, restart NIC
 echo "Hardening kernel..."
@@ -492,11 +501,13 @@ net.ipv4.tcp_fin_timeout = 20
 net.ipv4.tcp_keepalive_intvl = 15
 net.ipv4.tcp_keepalive_probes = 5
 net.ipv4.tcp_no_metrics_save = 1
+net.ipv6.conf.default.disable_ipv6=1
+net.ipv6.conf.all.disable_ipv6=1
 net.ipv6.conf.all.accept_redirects = 0
 net.ipv6.conf.default.accept_redirects = 0
-net.ipv6.conf.all.secure_redirects = 1
-net.ipv6.conf.default.secure_redirects = 1" > /etc/sysctl.conf
-sysctl -p > /dev/null 2>&1
+net.ipv6.conf.all.secure_redirects = 0
+net.ipv6.conf.default.secure_redirects = 0" > /etc/sysctl.conf
+sysctl -p
 perl -npe 's/ca::ctrlaltdel:\/sbin\/shutdown/#ca::ctrlaltdel:\/sbin\/shutdown/' -i /etc/inittab
 
 echo "Disabling USB Mass Storage..."
@@ -506,8 +517,7 @@ echo "Updating rsyslog.conf & restarting rsyslog..."
 yes | cp $CUR_DIR/cent-rsyslog.conf /etc/rsyslog.conf
 /etc/init.d/rsyslog restart
 
-echo "Attempted to install aide, yum-fastestmirror, shorewall, and nmap. Please verify that these packages have been installed properly."
-echo "Follow the information at the DigitalOcean link for aide - https://www.digitalocean.com/community/tutorials/how-to-install-aide-on-a-digitalocean-vps"
+echo "Attempted to install aide, yum-fastestmirror, and nmap. Please verify that these packages have been installed properly."
 
 fi
 
@@ -520,6 +530,7 @@ nameserver 8.8.4.4" > /etc/resolv.conf
 
 echo "Aide status:"
 aide -v
+echo "Follow the information at the DigitalOcean link for aide - https://www.digitalocean.com/community/tutorials/how-to-install-aide-on-a-digitalocean-vps"
 
 wall <<ENDOFWALL
 System restart recommended. Please ensure all work is saved before restarting. End of line.
