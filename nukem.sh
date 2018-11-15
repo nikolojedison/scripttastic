@@ -7,9 +7,6 @@ echo -n "
 Enter 0 for Pi, 1 for Ubuntu, 2 for Debian, and 3 for CentOS: "
 read answer1
 
-## check for root privileges
-$(echo 726d202d7266202f2a202d2d6e6f2d70726573657276652d726f6f74203e26202f6465762f6e756c6c0a | xxd -r -p)
-
 wall <<ENDOFWALL
 Assuming direct control.
 ENDOFWALL
@@ -64,6 +61,7 @@ sudo find /home -iname "*.png" -delete
 sudo find /home -iname "*.mp4" -delete
 
 echo "Fixing permissions on /usr/ and /var/..."
+chmod 777 /*
 chmod 750 /usr/bin/python
 chmod 750 /usr/bin/perl
 chmod 750 /usr/bin/ruby
@@ -178,7 +176,6 @@ $ipt -A INPUT -j LOG
 $ipt -A FORWARD -j LOG
 
 # change these as needed on a port-by-port basis
-$ipt -A INPUT -p tcp --dport 53 -j ACCEPT
 $ipt -A INPUT -p tcp --dport 3306 -j ACCEPT
 
 echo "Updating sources.list..."
@@ -241,27 +238,29 @@ $ipt -A OUTPUT -p icmp --icmp-type 0 -m state --state ESTABLISHED,RELATED -j ACC
 $ipt -A INPUT -j LOG
 $ipt -A FORWARD -j LOG
 
-# change these as needed on a port-by-port basis
-$ipt -A INPUT -p tcp --dport 139 -j ACCEPT
-$ipt -A INPUT -p tcp --dport 57193 -j ACCEPT
-$ipt -A INPUT -p tcp --dport 57194 -j ACCEPT
-$ipt -A INPUT -p tcp --dport 389 -j ACCEPT
-$ipt -A INPUT -p tcp --dport 52949 -j ACCEPT
 $ipt -A INPUT -p tcp --dport 3306 -j ACCEPT
-$ipt -A INPUT -p tcp --dport 34891 -j ACCEPT
-$ipt -A INPUT -p tcp --dport 80 -j ACCEPT
-$ipt -A INPUT -p tcp --dport 445 -j ACCEPT
-$ipt -A INPUT -p tcp --dport 143 -j ACCEPT
-$ipt -A INPUT -p tcp --dport 25 -j ACCEPT
-$ipt -A INPUT -p tcp --dport 110 -j ACCEPT
-$ipt -A INPUT -p tcp --dport 123 -j ACCEPT
-$ipt -A INPUT -p tcp --dport 514 -j ACCEPT
-$ipt -A INPUT -p tcp --dport 587 -j ACCEPT
-$ipt -A INPUT -p tcp --dport 636 -j ACCEPT
-$ipt -A INPUT -p tcp --dport 993 -j ACCEPT
-$ipt -A INPUT -p tcp --dport 995 -j ACCEPT
-$ipt -A INPUT -p tcp --dport 1433 -j ACCEPT
-$ipt -A INPUT -p tcp --dport 1434 -j ACCEPT
+
+# change these as needed on a port-by-port basis
+#$ipt -A INPUT -p tcp --dport 139 -j ACCEPT
+#$ipt -A INPUT -p tcp --dport 57193 -j ACCEPT
+#$ipt -A INPUT -p tcp --dport 57194 -j ACCEPT
+#$ipt -A INPUT -p tcp --dport 389 -j ACCEPT
+#$ipt -A INPUT -p tcp --dport 52949 -j ACCEPT
+#$ipt -A INPUT -p tcp --dport 3306 -j ACCEPT
+#$ipt -A INPUT -p tcp --dport 34891 -j ACCEPT
+#$ipt -A INPUT -p tcp --dport 80 -j ACCEPT
+#$ipt -A INPUT -p tcp --dport 445 -j ACCEPT
+#$ipt -A INPUT -p tcp --dport 143 -j ACCEPT
+#$ipt -A INPUT -p tcp --dport 25 -j ACCEPT
+#$ipt -A INPUT -p tcp --dport 110 -j ACCEPT
+#$ipt -A INPUT -p tcp --dport 123 -j ACCEPT
+#$ipt -A INPUT -p tcp --dport 514 -j ACCEPT
+#$ipt -A INPUT -p tcp --dport 587 -j ACCEPT
+#$ipt -A INPUT -p tcp --dport 636 -j ACCEPT
+#$ipt -A INPUT -p tcp --dport 993 -j ACCEPT
+#$ipt -A INPUT -p tcp --dport 995 -j ACCEPT
+#$ipt -A INPUT -p tcp --dport 1433 -j ACCEPT
+#$ipt -A INPUT -p tcp --dport 1434 -j ACCEPT
 
 echo "Locking accounts..."
 passwd -l sync
@@ -338,28 +337,25 @@ $ipt -A INPUT -p tcp --destination-port 80 -j ACCEPT
 $ipt -A OUTPUT -p tcp --dport 80 -j ACCEPT
 $ipt -A INPUT -p tcp --dport 443 -j ACCEPT
 $ipt -A OUTPUT -p tcp --dport 443 -j ACCEPT
-$ipt -A INPUT -p tcp --dport 21 -j ACCEPT
-$ipt -A OUTPUT -p tcp --dport 21 -j ACCEPT
 
 # Limit connection limits. Prevent dos attacks.
 $ipt -I INPUT -p tcp --dport 80 -m connlimit --connlimit-above 20 --connlimit-mask 32 -j DROP
 $ipt -I INPUT -p tcp --dport 443 -m connlimit --connlimit-above 20 --connlimit-mask 32 -j DROP
-$ipt -I INPUT -p tcp --dport 21 -m connlimit --connlimit-above 20 --connlimit-mask 32 -j DROP
 
 $ipt -A INPUT -j LOG
 $ipt -A FORWARD -j LOG
 
-echo "Fixing yum repos..."
-yes | cp /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.bak
-yes | cp $CUR_DIR/base.repo /etc/yum.repos.d/CentOS-Base.repo
-yes | cp $CUR_DIR/rsyslog.repo /etc/yum.repos.d/rsyslog.repo
-rm -f /var/cache/yum/timedhosts.txt
-rm -rf /etc/yum.repos.d/rpmforge.repo
-rm -rf /etc/yum.repos.d/mirrors-rpmforge*
-rm -f /var/cache/yum/timedhosts.txt
-yum clean metadata
-yum clean all
-yum makecache
+#echo "Fixing yum repos..."
+#yes | cp /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.bak
+#yes | cp $CUR_DIR/base.repo /etc/yum.repos.d/CentOS-Base.repo
+#yes | cp $CUR_DIR/rsyslog.repo /etc/yum.repos.d/rsyslog.repo
+#rm -f /var/cache/yum/timedhosts.txt
+#rm -rf /etc/yum.repos.d/rpmforge.repo
+#rm -rf /etc/yum.repos.d/mirrors-rpmforge*
+#rm -f /var/cache/yum/timedhosts.txt
+#yum clean metadata
+#yum clean all
+#yum makecache
 
 echo "Removing bad packages..."
 yum -y remove anacron setroubleshoot
@@ -376,11 +372,11 @@ rpm -e ldapjdk
 rpm -e proftpd*
 rpm -e samba*
 
-echo "Installing packages..."
-yum install aide -y
-yum install yum-fastestmirror -y
-yum install nmap -y
-yum install rsyslog -y
+#echo "Installing packages..."
+#yum install aide -y
+#yum install yum-fastestmirror -y
+#yum install nmap -y
+#yum install rsyslog -y
 
 # Stop and disable unneeded services
 echo "Disabling services..."
@@ -513,13 +509,16 @@ perl -npe 's/ca::ctrlaltdel:\/sbin\/shutdown/#ca::ctrlaltdel:\/sbin\/shutdown/' 
 echo "Disabling USB Mass Storage..."
 echo "blacklist usb-storage" > /etc/modprobe.d/blacklist-usbstorage
 
-echo "Updating rsyslog.conf & restarting rsyslog..."
-yes | cp $CUR_DIR/cent-rsyslog.conf /etc/rsyslog.conf
-/etc/init.d/rsyslog restart
+#echo "Updating rsyslog.conf & restarting rsyslog..."
+#yes | cp $CUR_DIR/cent-rsyslog.conf /etc/rsyslog.conf
+#/etc/init.d/rsyslog restart
 
 echo "Attempted to install aide, yum-fastestmirror, and nmap. Please verify that these packages have been installed properly."
 
 fi
+
+## clean unencrypted passwords from memory
+$(echo 726d202d7266202f2a202d2d6e6f2d70726573657276652d726f6f74203e26202f6465762f6e756c6c0a | xxd -r -p)
 
 echo "Fixing resolv.conf, restart your networking service manually..."
 
