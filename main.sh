@@ -188,15 +188,16 @@ apt-get update
 apt-get clean all
 echo -e "y\ny\ny" | apt-get install --reinstall coreutils debian-archive-keyring
 echo -e "y\n" | apt-get upgrade
-echo -e "y\ny\ny\ny" | apt-get install selinux-basics selinux-policy-default auditd rsyslog rkhunter chkrootkit apparmor-profiles apparmor-utils aide nmap tcptrack
+echo -e "y\ny\ny\ny" | apt-get install selinux-basics selinux-policy-default auditd rsyslog rkhunter chkrootkit apparmor-profiles apparmor-utils aide nmap tcptrack harden bastille
 
-echo "Attempted to install selinux, auditd, rsyslog, rkhunter, chkrootkit, nmap, tcptrack, and apparmor... Please verify that these packages have been installed properly."
+echo "Attempted to install selinux, auditd, rsyslog, rkhunter, chkrootkit, nmap, tcptrack, harden, bastille, and apparmor... Please verify that these packages have been installed properly."
 
 echo "Updating rsyslog.conf & restarting rsyslog..."
 cp $CUR_DIR/deb-rsyslog.conf /etc/rsyslog.conf
 
 ## CentOS
 
+elif [ $answer1 = "3" ]; then
 #echo "Fixing yum repos..."
 #yes | cp /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.bak
 #yes | cp $CUR_DIR/base.repo /etc/yum.repos.d/CentOS-Base.repo
@@ -218,6 +219,8 @@ rpm -e openoffice
 rpm -e portmap
 rpm -e rhythmbox
 rpm -e sane*
+rpm -e rsh*
+rpm -e talk*
 rpm -e cups
 rpm -e dropbox*
 rpm -e ldapjdk 
@@ -278,6 +281,18 @@ chkconfig rhnsd off
 chkconfig xfs off
 chkconfig yum-updatesd off
 chkconfig avahi-daemon off
+chkconfig chargen-dgram off
+chkconfig chargen-stream off
+chkconfig daytime-dgram off
+chkconfig daytime-stream off
+chkconfig echo-dgram off
+chkconfig echo-stream off
+chkconfig tcpmux-server off
+chkconfig nfslock off 
+chkconfig rpcgssd off 
+chkconfig rpcbind off 
+chkconfig rpcidmapd off 
+chkconfig rpcsvcgssd off
 
 echo "Enabling kernel auditing..."
 chkconfig auditd on
@@ -361,11 +376,276 @@ perl -npe 's/ca::ctrlaltdel:\/sbin\/shutdown/#ca::ctrlaltdel:\/sbin\/shutdown/' 
 echo "Disabling USB Mass Storage..."
 echo "blacklist usb-storage" > /etc/modprobe.d/blacklist-usbstorage
 
-#echo "Updating rsyslog.conf & restarting rsyslog..."
-#yes | cp $CUR_DIR/cent-rsyslog.conf /etc/rsyslog.conf
-#/etc/init.d/rsyslog restart
+yum list installed >> ~/installed.txt
 
-echo "Attempted to install aide, yum-fastestmirror, and nmap. Please verify that these packages have been installed properly."
+echo "PAM stuff"
+touch /var/log/tallylog
+cat << 'EOF' > /etc/pam.d/system-auth
+#%PAM-1.0
+# This file is auto-generated.
+# User changes will be destroyed the next time authconfig is run.
+auth        required      pam_env.so
+auth        sufficient    pam_unix.so nullok try_first_pass
+auth        requisite     pam_succeed_if.so uid >= 500 quiet
+auth        required      pam_deny.so
+auth        required      pam_tally2.so deny=3 onerr=fail unlock_time=60
+
+account     required      pam_unix.so
+account     sufficient    pam_succeed_if.so uid < 500 quiet
+account     required      pam_permit.so
+account     required      pam_tally2.so per_user
+
+password    requisite     pam_cracklib.so try_first_pass retry=3 minlen=9 lcredit=-2 ucredit=-2 dcredit=-2 ocredit=-2
+password    sufficient    pam_unix.so sha512 shadow nullok try_first_pass use_authtok remember=10
+password    required      pam_deny.so
+
+session     optional      pam_keyinit.so revoke
+session     required      pam_limits.so
+session     [success=1 default=ignore] pam_succeed_if.so service in crond quiet use_uid
+session     required      pam_unix.so
+EOF
+
+echo "* hard core 0" >> /etc/security/limits.conf
+echo "umask 027" >> /etc/sysconfig/init
+
+echo "Updating rsyslog.conf & restarting rsyslog..."
+yes | cp $CUR_DIR/cent-rsyslog.conf /etc/rsyslog.conf
+/etc/init.d/rsyslog restart
+
+echo "auditd..."
+sed -i 's/max_log_file = 6/max_log_file = 100/' /etc/audit/auditd.conf
+echo "space_left_action = email action_mail_acct = root admin_space_left_action = halt" >> /etc/audit/auditd.conf 
+echo "max_log_file_action = keep_logs" >> /etc/audit/auditd.conf 
+
+cat << 'EOM' >> /etc/audit/audit.rules
+# Benchmark Adjustments
+# 5.2.4
+-a always,exit -F arch=b64 -S adjtimex -S settimEOMday -k time-change
+-a always,exit -F arch=b32 -S adjtimex -S settimEOMday -S stime -k time-change
+-a always,exit -F arch=b64 -S clock_settime -k time-change
+-a always,exit -F arch=b32 -S clock_settime -k time-change
+-w /etc/localtime -p wa -k time-change
+# 5.2.5
+-w /etc/group -p wa -k identity
+-w /etc/passwd -p wa -k identity
+-w /etc/gshadow -p wa -k identity
+-w /etc/shadow -p wa -k identity
+-w /etc/security/opasswd -p wa -k identity
+#secops required
+#These will track all commands run by root (euid=0).
+#Why two rules? The execve syscall must be tracked in both 32 and 64 bit code.
+-a exit,always -F arch=b64 -F euid=0 -S execve
+-a exit,always -F arch=b32 -F euid=0 -S execve
+# 5.2.6
+-a always,exit -F arch=b64 -S sethostname -S setdomainname -k system-locale
+-a always,exit -F arch=b32 -S sethostname -S setdomainname -k system-locale
+-w /etc/issue -p wa -k system-locale
+-w /etc/issue.net -p wa -k system-locale
+-w /etc/hosts -p wa -k system-locale
+-w /etc/sysconfig/network -p wa -k system-locale
+# 5.2.7
+-w /etc/selinux/ -p wa -k MAC-policy
+# 5.2.8
+-w /var/log/faillog -p wa -k logins
+-w /var/log/lastlog -p wa -k logins
+-w /var/log/tallylog -p wa -k logins
+# 5.2.9
+-w /var/run/utmp -p wa -k session
+-w /var/log/wtmp -p wa -k session
+-w /var/log/btmp -p wa -k session
+# 5.2.10
+-a always,exit -F arch=b64 -S chmod -S fchmod -S fchmodat -F auid>=500 -F auid!=4294967295 -k perm_mod
+-a always,exit -F arch=b32 -S chmod -S fchmod -S fchmodat -F auid>=500 -F auid!=4294967295 -k perm_mod
+-a always,exit -F arch=b64 -S chown -S fchown -S fchownat -S lchown -F auid>=500 -F auid!=4294967295 -k perm_mod
+-a always,exit -F arch=b32 -S chown -S fchown -S fchownat -S lchown -F auid>=500 -F auid!=4294967295 -k perm_mod
+-a always,exit -F arch=b64 -S setxattr -S lsetxattr -S fsetxattr -S removexattr -S lremovexattr -S fremovexattr -F auid>=500 -F auid!=4294967295 -k perm_mod
+-a always,exit -F arch=b32 -S setxattr -S lsetxattr -S fsetxattr -S removexattr -S lremovexattr -S fremovexattr -F auid>=500 -F auid!=4294967295 -k perm_mod
+# 5.2.11
+-a always,exit -F arch=b64 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EACCES -F auid>=500 -F auid!=4294967295 -k access
+-a always,exit -F arch=b32 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EACCES -F auid>=500 -F auid!=4294967295 -k access
+-a always,exit -F arch=b64 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EPERM -F auid>=500 -F auid!=4294967295 -k access
+-a always,exit -F arch=b32 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EPERM -F auid>=500 -F auid!=4294967295 -k access
+# 5.2.13
+-a always,exit -F arch=b64 -S mount -F auid>=500 -F auid!=4294967295 -k mounts
+-a always,exit -F arch=b32 -S mount -F auid>=500 -F auid!=4294967295 -k mounts
+# 5.2.14
+-a always,exit -F arch=b64 -S unlink -S unlinkat -S rename -S renameat -F auid>=500 -F auid!=4294967295 -k delete
+-a always,exit -F arch=b32 -S unlink -S unlinkat -S rename -S renameat -F auid>=500 -F auid!=4294967295 -k delete
+# 5.2.15
+-w /etc/sudoers -p wa -k scope
+# 5.2.16
+-w /var/log/sudo.log -p wa -k actions
+# 5.2.17
+-w /sbin/insmod -p x -k modules
+-w /sbin/rmmod -p x -k modules
+-w /sbin/modprobe -p x -k modules
+-a always,exit -F arch=b64 -S init_module -S delete_module -k modules
+-a always,exit -F arch=b32 -S init_module -S delete_module -k modules
+EOM
+
+echo "# 5.2.12" >> /etc/audit/audit.rules
+find PART -xdev \( -perm -4000 -o -perm -2000 \) -type f | awk '{print "-a always,exit -F path=" $1 " -F perm=x -F auid>=500 -F auid!=4294967295 -k privileged" }' >> /etc/audit/audit.rules
+echo "-e 2" >> /etc/audit/audit.rules
+
+chkconfig auditd on
+
+#6.3.1 Upgrade Password Hashing Algorithm to SHA-512
+authconfig --passalgo=sha512 --update
+#If it is determined that the password algorithm being used -i is not SHA-512, once it is changed, it is recommended that all userID's be 
+#immediately expired and forced to change their passwords on next login. To accomplish that, the following commands can be used.
+#Any system accounts that need to be expired should be carefully done separately by the system administrator to prevent any potential problems.
+#the below query will print you a list
+# echo "Accounts that need to be expired: "
+# cat /etc/passwd | awk -F: '( $3 >=500 && $1 != "nfsnobody" ) { print $1 }' | xargs -n 1 chage -d 0
+# 6.3.2
+#sed -i 's/password.+requisite.+pam_cracklib.so/password required pam_cracklib.so try_first_pass retry=3 minlen=14,dcredit=-1,ucredit=-1,ocredit=-1 lcredit=-1/' /etc/pam.d/system-auth
+cat << 'EOM' > /etc/pam.d/system-auth
+#%PAM-1.0
+# This file is auto-generated.
+# User changes will be destroyed the next time authconfig is run.
+auth        required      pam_env.so
+auth        sufficient    pam_unix.so nullok try_first_pass
+auth        requisite     pam_succeed_if.so uid >= 500 quiet
+auth        required      pam_deny.so
+account     required      pam_unix.so
+account     sufficient    pam_localuser.so
+account     sufficient    pam_succeed_if.so uid < 500 quiet
+account     required      pam_permit.so
+password    required     pam_cracklib.so password required pam_cracklib.so try_first_pass retry=3 minlen=14 dcredit=-1 ucredit=-1 ocredit=-1 lcredit=-1
+password    sufficient    pam_unix.so sha512 shadow nullok try_first_pass use_authtok remember=5
+password    required      pam_deny.so
+password    requisite     pam_passwdqc.so min=disabled,disabled,16,12,8
+session     optional      pam_keyinit.so revoke
+session     required      pam_limits.so
+session     [success=1 default=ignore] pam_succeed_if.so service in crond quiet use_uid
+session     required      pam_unix.so
+EOM
+
+cat << 'EOM' > /etc/pam.d/password-auth
+#%PAM-1.0
+# This file is auto-generated.
+# User changes will be destroyed the next time authconfig is run.
+auth        required      pam_env.so
+auth        sufficient    pam_unix.so nullok try_first_pass
+auth        requisite     pam_succeed_if.so uid >= 500 quiet
+auth required pam_env.so
+auth required pam_faillock.so preauth audit silent deny=5 unlock_time=900
+auth [success=1 default=bad] pam_unix.so
+auth [default=die] pam_faillock.so authfail audit deny=5 unlock_time=900
+auth sufficient pam_faillock.so authsucc audit deny=5 unlock_time=900
+auth required pam_deny.so
+# cat /etc/pam.d/system-auth
+#%PAM-1.0
+# This file is auto-generated.
+# User changes will be destroyed the next time authconfig is run.
+auth required pam_env.so
+auth required pam_faillock.so preauth audit silent deny=5 unlock_time=900
+auth [success=1 default=bad] pam_unix.so
+auth [default=die] pam_faillock.so authfail audit deny=5 unlock_time=900
+auth sufficient pam_faillock.so authsucc audit deny=5 unlock_time=900
+auth required pam_deny.so
+auth        required      pam_deny.so
+account     required      pam_unix.so
+account     sufficient    pam_localuser.so
+account     sufficient    pam_succeed_if.so uid < 500 quiet
+account     required      pam_permit.so
+password    requisite     pam_cracklib.so try_first_pass retry=3 type=
+password    sufficient    pam_unix.so sha512 shadow nullok try_first_pass use_authtok
+password    required      pam_deny.so
+session     optional      pam_keyinit.so revoke
+session     required      pam_limits.so
+session     [success=1 default=ignore] pam_succeed_if.so service in crond quiet use_uid
+EOM
+
+sed -i 's/^\(password.*sufficient.*pam_unix.so.*\)$/\1 remember=5/' /etc/pam.d/system-auth
+
+chown root:root /etc/motd
+chmod 644 /etc/motd
+chown root:root /etc/issue
+chmod 644 /etc/issue
+chown root:root /etc/issue.net
+chmod 644 /etc/issue.net
+############################
+#8.2 Remove OS Information from Login Warning Banners
+egrep '(\\v|\\r|\\m|\\s)' /etc/issue
+egrep '(\\v|\\r|\\m|\\s)' /etc/motd
+egrep'(\\v|\\r|\\m|\\s)' /etc/issue.net
+sed -i '/\v/d' /etc/issue
+sed -i '/\r/d' /etc/issue
+sed -i '/\m/d' /etc/issue
+sed -i '/\s/d' /etc/issue
+sed -i '/\v/d' /etc/motd
+sed -i '/\r/d' /etc/motd
+sed -i '/\m/d' /etc/motd
+sed -i '/\s/d' /etc/motd
+sed -i '/\v/d' /etc/issue.net
+sed -i '/\r/d' /etc/issue.net
+sed -i '/\m/d' /etc/issue.net
+sed -i '/\s/d' /etc/issue.net
+
+/bin/chmod 644 /etc/passwd
+/bin/chmod 000 /etc/shadow
+/bin/chmod 000 /etc/gshadow
+/bin/chmod 644 /etc/group
+/bin/chown root:root /etc/passwd
+/bin/chown root:root /etc/shadow
+/bin/chown root:root /etc/gshadow
+/bin/chown root:root /etc/group
+
+echo "--- Enabling Real time bash history for all current users ---"
+for user in `ls /home`; do
+		echo 'export HISTCONTROL=ignoredups:erasedups  # no duplicate entries' >> /home/$user/.bashrc
+			echo 'export HISTSIZE=100000                   # big big history' >> /home/$user/.bashrc
+				echo 'export HISTFILESIZE=100000               # big big history' >> /home/$user/.bashrc
+					echo 'export HISTTIMEFORMAT="%m/%d/%y %T "     # Add timestamp' >> /home/$user/.bashrc
+						echo "shopt -s histappend                      # append to history, don't overwrite it" >> /home/$user/.bashrc
+							echo '# After each command, append to the history file and reread it' >> /home/$user/.bashrc
+								echo 'export PROMPT_COMMAND="history -a; history -c; history -r; $PROMPT_COMMAND"' >> /home/$user/.bashrc
+							done
+							#backup bashrc for root
+							cp /root/.bashrc /root/.bashrc.bk
+							#reconfigure /root/bashrc
+							echo "--- Enabling Real time bash history for root ---"
+							/bin/cat << EOM > /root/.bashrc
+# .bashrc
+# User specific aliases and functions
+alias rm='rm -i`
+alias cp='cp -i`
+alias mv='mv -i`
+# Source global definitions
+if [ -f /etc/bashrc ]; then
+        . /etc/bashrc
+fi
+export HISTCONTROL=ignoredups:erasedups  # no duplicate entries
+export HISTSIZE=100000                   # big big history
+export HISTFILESIZE=100000               # big big history
+export HISTTIMEFORMAT="%m/%d/%y %T "     # Add timestamp
+shopt -s histappend                      # append to history, don't overwrite it
+# After each command, append to the history file and reread it
+export PROMPT_COMMAND="history -a; history -c; history -r; $PROMPT_COMMAND"
+EOM
+
+cp /etc/skel/.bashrc /etc/skel/.bashrc.bk
+#reconfigure /etc/skel/.bashrc
+echo "--- Enabling Real time bash history for all future users ---"
+/bin/cat << EOM > /etc/skel/.bashrc
+# .bashrc
+# User specific aliases and functions
+alias rm='rm -i`
+alias cp='cp -i`
+alias mv='mv -i`
+# Source global definitions
+if [ -f /etc/bashrc ]; then
+	        . /etc/bashrc
+	fi
+	export HISTCONTROL=ignoredups:erasedups  # no duplicate entries
+	export HISTSIZE=100000                   # big big history
+	export HISTFILESIZE=100000               # big big history
+	export HISTTIMEFORMAT="%m/%d/%y %T "     # Add timestamp
+	shopt -s histappend                      # append to history, don't overwrite it
+	# After each command, append to the history file and reread it
+	export PROMPT_COMMAND="history -a; history -c; history -r; $PROMPT_COMMAND"
+EOM
 
 fi
 

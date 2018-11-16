@@ -254,6 +254,33 @@ net.ipv6.conf.default.secure_redirects = 0" > /etc/sysctl.conf
 sysctl -p
 perl -npe 's/ca::ctrlaltdel:\/sbin\/shutdown/#ca::ctrlaltdel:\/sbin\/shutdown/' -i /etc/inittab
 
+#4.4.1.1 Disable IPv6 Router Advertisements 	
+#"Set the net.ipv6.conf.all.accept_ra and net.ipv6.conf.default.accept_ra parameter to 0 in /etc/sysctl.conf: 
+#net.ipv6.conf.all.accept_ra=0 net.ipv6.conf.default.accept_ra=0
+#Modify active kernel parameters to match: # 
+/sbin/sysctl -w net.ipv6.conf.all.accept_ra=0 
+/sbin/sysctl -w net.ipv6.conf.default.accept_ra=0
+/sbin/sysctl -w net.ipv6.route.flush=1
+#4.4.1.2 Disable IPv6 Redirect Acceptance 	
+#"Set the net.ipv6.conf.all.accept_redirects and net.ipv6.conf.default.accept_redirects parameters to 0 in /etc/sysctl.conf: 
+#net.ipv6.conf.all.accept_redirects=0 net.ipv6.conf.default.accept_redirects=0
+#Modify active kernel parameters to match: # 
+/sbin/sysctl -w net.ipv6.conf.all.accept_redirects=0 
+/sbin/sysctl -w net.ipv6.conf.default.accept_redirects=0 
+/sbin/sysctl -w net.ipv6.route.flush=1
+#4.4.2 Disable IPv6	
+#"Edit /etc/sysconfig/network, and add the following line: NETWORKING_IPV6=no IPV6INIT=no
+#Create the file /etc/modprobe.d/ipv6.conf and add the following lines: options ipv6 disable=1
+#Perform the following command to turn ip6tables off: # /sbin/chkconfig ip6tables off"
+echo "NETWORKING_IPV6=no" >> /etc/sysconfig/network
+echo "IPV6INIT=no" >> /etc/sysconfig/network
+touch /etc/modprobe.d/ipv6.conf 
+echo "options ipv6 disable=1" >> /etc/modprobe.d/ipv6.conf
+echo "install dccp /bin/true" >> /etc/modprobe.d/CIS.conf
+echo "install sctp /bin/true" >> /etc/modprobe.d/CIS.conf
+echo "install rds /bin/true" >> /etc/modprobe.d/CIS.conf
+echo "install tipc /bin/true" >> /etc/modprobe.d/CIS.conf
+
 fi
 
 yes | cp /etc/resolv.conf /etc/resolv.conf-bak
