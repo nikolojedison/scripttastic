@@ -7,6 +7,10 @@ echo -n "
 Enter 0 for Pi, 1 for Ubuntu, 2 for Debian, and 3 for CentOS: "
 read answer1
 
+echo -n "
+Enter NTP IP: "
+read answer2
+
 wall <<ENDOFWALL
 Assuming direct control.
 ENDOFWALL
@@ -35,7 +39,7 @@ cat motd > /etc/motd.tail
 
 echo "Updating NTP..."
 /etc/init.d/ntpd stop
-ntpdate 172.20.241.27
+ntpdate $answer2
 
 echo "Cleaning /home/..."
 
@@ -192,13 +196,6 @@ echo "Updating rsyslog.conf & restarting rsyslog..."
 cp $CUR_DIR/deb-rsyslog.conf /etc/rsyslog.conf
 
 ## CentOS
-elif [ $answer1 = "3" ]; then
-echo "Firewall reset, adding CentOS rules..."
-
-PUB_IF="eth0"
-SPAMLIST="blockedip"
-SPAMDROPMSG="BLOCKED IP DROP"
-
 
 #echo "Fixing yum repos..."
 #yes | cp /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.bak
